@@ -10,9 +10,9 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#F5F5F4">
 
-    <!-- Icons: Updated to Yellow Ginkgo for Osaka vibe -->
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1598/1598431.png">
-    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/1598/1598431.png">
+    <!-- Icons: Minimalist Family of Three (Dad, Mom, Girl) -->
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3209/3209966.png">
+    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/3209/3209966.png">
 
     <!-- Libraries -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -836,7 +836,10 @@
             const itemData = { title, location: location || title, time, day, type, note, lat, lng, created: Date.now() };
             try {
                 if(db) {
-                    if(id) await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('itinerary').doc(id).update(itemData);
+                    if(id) {
+                        // FIX: Use set with merge to ensure default items sync properly
+                        await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('itinerary').doc(id).set(itemData, {merge: true});
+                    }
                     else await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('itinerary').add(itemData);
                 } else throw new Error();
             } catch(e) {
