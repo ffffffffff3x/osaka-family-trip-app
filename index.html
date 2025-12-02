@@ -2,71 +2,92 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <!-- 讓 iPhone 全螢幕時避開劉海 -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>OSAKA Family Trip 2025</title>
     
-    <!-- iOS Web App 設定 -->
+    <!-- iOS PWA Settings -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Osaka 2025">
     <meta name="theme-color" content="#F5F5F4">
 
-    <!-- App Icon (使用 Wikimedia 穩定圖源 + ?v=5 強制刷新) -->
-    <link rel="apple-touch-icon" sizes="180x180" href="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Ginkgo_biloba_leaf_stylized.svg/512px-Ginkgo_biloba_leaf_stylized.svg.png?v=5">
-    <link rel="icon" type="image/png" href="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Ginkgo_biloba_leaf_stylized.svg/512px-Ginkgo_biloba_leaf_stylized.svg.png?v=5">
-    <link rel="shortcut icon" href="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Ginkgo_biloba_leaf_stylized.svg/512px-Ginkgo_biloba_leaf_stylized.svg.png?v=5">
+    <!-- Icons -->
+    <link rel="apple-touch-icon" href="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Ginkgo_biloba_leaf_stylized.svg/512px-Ginkgo_biloba_leaf_stylized.svg.png?v=6">
+    <link rel="icon" type="image/png" href="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Ginkgo_biloba_leaf_stylized.svg/512px-Ginkgo_biloba_leaf_stylized.svg.png?v=6">
 
-    <!-- Tailwind CSS & Icons -->
+    <!-- Libraries -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-
-    <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Noto+Serif+JP:wght@700&display=swap" rel="stylesheet">
-
-    <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
-    <!-- Firebase SDKs -->
+    <!-- Firebase (Compat Mode for HTML) -->
     <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-compat.js"></script>
 
     <style>
+        /* Base Settings */
         body {
             font-family: 'Noto Sans TC', sans-serif;
             background-color: #F5F5F4;
             color: #44403c;
-            /* iOS Safe Area */
             padding-top: env(safe-area-inset-top);
-            padding-bottom: env(safe-area-inset-bottom);
+            padding-bottom: calc(80px + env(safe-area-inset-bottom));
             -webkit-tap-highlight-color: transparent;
+            height: 100vh;
+            overflow: hidden;
         }
+
+        /* Page Transitions */
+        .page {
+            display: none;
+            height: 100%;
+            overflow-y: auto;
+            padding-bottom: 120px;
+            opacity: 0;
+            transition: opacity 0.2s ease-in;
+        }
+        .page.active {
+            display: block;
+            opacity: 1;
+        }
+
+        /* Utilities */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        .page { display: none; padding-bottom: 110px; opacity: 0; transition: opacity 0.3s; }
-        .page.active { display: block; opacity: 1; }
-        
-        /* Splash */
-        #splash-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.8s; }
-        
         .serif-title { font-family: 'Noto Serif JP', serif; }
+        
+        /* Navigation Styles */
         .nav-item.active { color: #292524; }
         .nav-item.active svg { stroke-width: 2.5px; }
         
-        /* Cards */
+        /* Specific Card Styles */
         .driver-card { background: linear-gradient(135deg, #292524 0%, #44403c 100%); color: white; }
-        .jp-card:active { transform: scale(0.95); background-color: #e7e5e4; transition: 0.1s; }
+        .jp-card:active { transform: scale(0.98); background-color: #e5e5e5; transition: 0.1s; }
         
-        /* Map */
+        /* Map & Modal Fixes */
         #zoom-modal { backdrop-filter: blur(8px); }
         .leaflet-pane { z-index: 1 !important; }
         .leaflet-control { z-index: 2 !important; }
+        
+        /* Splash Screen */
+        #splash-screen { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: #fff; z-index: 9999; 
+            display: flex; flex-direction: column; justify-content: center; align-items: center; 
+            transition: opacity 0.8s; 
+        }
+        
+        /* Status Dot */
+        #connection-status { position: absolute; top: 15px; left: 15px; z-index: 50; width: 8px; height: 8px; border-radius: 50%; }
+        .status-online { background-color: #22c55e; box-shadow: 0 0 5px #22c55e; }
+        .status-offline { background-color: #ef4444; box-shadow: 0 0 5px #ef4444; }
     </style>
 </head>
-<body class="antialiased h-screen overflow-hidden">
+<body class="antialiased">
 
-    <!-- Splash -->
+    <!-- Splash Screen -->
     <div id="splash-screen">
         <div class="text-center animate-pulse px-6">
             <h1 class="text-4xl font-bold tracking-widest text-stone-800 mb-2 serif-title">OSAKA</h1>
@@ -76,9 +97,12 @@
         </div>
     </div>
 
-    <!-- Page: Flight (Itinerary) -->
-    <div id="page-flight" class="page h-full overflow-y-auto no-scrollbar">
-        <!-- Header -->
+    <!-- Connection Status Indicator (Top Left) -->
+    <div id="connection-status" class="status-offline" title="連線狀態"></div>
+
+    <!-- PAGE 1: 行程 (Flight/Itinerary) -->
+    <div id="page-flight" class="page no-scrollbar">
+        <!-- Header Image -->
         <div class="relative h-60 w-full overflow-hidden z-10 group">
             <img id="daily-scenic-img" src="" class="w-full h-full object-cover transition-opacity duration-700">
             <div class="absolute inset-0 bg-gradient-to-t from-stone-900/70 to-transparent"></div>
@@ -94,7 +118,7 @@
             </label>
         </div>
 
-        <!-- Date Tabs -->
+        <!-- Sticky Date Tabs -->
         <div class="sticky top-0 bg-[#F5F5F4]/95 backdrop-blur z-30 border-b border-stone-200 shadow-sm mt-[-20px] pt-6 rounded-t-3xl">
             <div class="flex items-center justify-between pl-2 pr-4 py-2">
                 <div class="flex overflow-x-auto no-scrollbar space-x-2 py-1 flex-1" id="date-tabs"></div>
@@ -104,18 +128,49 @@
             </div>
         </div>
 
-        <!-- Weather -->
+        <!-- Weather Strip -->
         <div class="py-3 overflow-x-auto no-scrollbar">
             <div class="flex px-4 space-x-3 min-w-max" id="weather-strip"></div>
         </div>
 
-        <!-- List -->
+        <!-- Itinerary List -->
         <div id="itinerary-list" class="p-4 space-y-3 pb-24 min-h-[300px]"></div>
     </div>
 
-    <!-- Page: Luggage -->
-    <div id="page-luggage" class="page h-full overflow-y-auto no-scrollbar">
-        <div class="sticky top-0 bg-[#F5F5F4]/95 backdrop-blur z-20 border-b border-stone-200 px-5 py-4">
+    <!-- PAGE 2: 購物 (Shopping) -->
+    <div id="page-shopping" class="page no-scrollbar bg-stone-50">
+        <div class="sticky top-0 bg-[#F5F5F4]/95 backdrop-blur z-20 border-b border-stone-200 px-5 py-4 mt-safe-top">
+            <h2 class="text-xl font-bold text-stone-800 serif-title">必買清單</h2>
+        </div>
+        <div class="p-4">
+            <!-- Add Shopping Item -->
+            <div class="bg-white p-4 rounded-xl border border-stone-200 shadow-sm mb-6">
+                <div class="flex gap-3 items-start">
+                    <label class="w-20 h-20 bg-stone-100 rounded-lg flex flex-col items-center justify-center cursor-pointer border border-stone-200 hover:bg-stone-200 flex-shrink-0 overflow-hidden relative group">
+                        <input type="file" accept="image/*" class="hidden" onchange="handleShopImg(event)">
+                        <img id="shop-img-preview" class="hidden w-full h-full object-cover">
+                        <div id="shop-img-placeholder" class="text-stone-400 flex flex-col items-center">
+                            <i data-lucide="camera" class="w-5 h-5 mb-1"></i>
+                            <span class="text-[10px]">照片</span>
+                        </div>
+                    </label>
+                    <div class="flex-1 space-y-2">
+                        <input type="text" id="shop-name" placeholder="商品名稱 (例: EVE止痛藥)" class="w-full bg-stone-50 border-none rounded-lg px-3 py-2 text-sm outline-none font-bold">
+                        <input type="text" id="shop-note" placeholder="備註 (例: 藍色包裝, 2盒)" class="w-full bg-stone-50 border-none rounded-lg px-3 py-2 text-xs outline-none">
+                    </div>
+                </div>
+                <button onclick="addShopItem()" class="mt-3 w-full bg-stone-800 text-white py-2 rounded-lg text-sm font-bold flex items-center justify-center">
+                    <i data-lucide="plus" class="w-4 h-4 mr-1"></i> 加入清單
+                </button>
+            </div>
+            <!-- Shopping List Grid -->
+            <div id="shopping-list" class="grid grid-cols-2 gap-3 pb-20"></div>
+        </div>
+    </div>
+
+    <!-- PAGE 3: 行李 (Luggage) -->
+    <div id="page-luggage" class="page no-scrollbar">
+        <div class="sticky top-0 bg-[#F5F5F4]/95 backdrop-blur z-20 border-b border-stone-200 px-5 py-4 mt-safe-top">
             <div class="flex justify-between items-center">
                 <h2 class="text-xl font-bold text-stone-800 serif-title">行李清單</h2>
                 <span class="text-xs font-mono bg-stone-200 px-2 py-1 rounded text-stone-600" id="luggage-count">0/0</span>
@@ -131,13 +186,14 @@
         <div class="p-5 space-y-2" id="luggage-list"></div>
     </div>
 
-    <!-- Page: Money -->
-    <div id="page-money" class="page h-full overflow-y-auto no-scrollbar">
-        <div class="sticky top-0 bg-[#F5F5F4]/95 backdrop-blur z-20 border-b border-stone-200 px-5 py-4">
+    <!-- PAGE 4: 記帳 (Money) -->
+    <div id="page-money" class="page no-scrollbar">
+        <div class="sticky top-0 bg-[#F5F5F4]/95 backdrop-blur z-20 border-b border-stone-200 px-5 py-4 mt-safe-top">
              <h2 class="text-xl font-bold text-stone-800 serif-title">換匯 & 記帳</h2>
         </div>
         <div class="p-5">
-            <div class="bg-stone-800 text-white rounded-2xl p-6 shadow-xl mb-8 relative overflow-hidden">
+            <!-- Calculator -->
+            <div class="bg-stone-800 text-white rounded-2xl p-6 shadow-xl mb-6 relative overflow-hidden">
                 <div class="flex justify-between items-center mb-6 relative z-10">
                      <span class="text-[10px] font-bold tracking-[0.2em] text-stone-400">EXCHANGE</span>
                      <div class="text-[10px] bg-stone-700 px-2 py-1 rounded text-stone-300">Rate: 0.215</div>
@@ -151,15 +207,35 @@
                     <span class="text-4xl font-mono font-bold text-emerald-400" id="twd-output">0</span>
                 </div>
             </div>
-            <div class="bg-white p-4 rounded-xl border border-stone-200 shadow-sm mb-6">
-                 <div class="flex gap-2 mb-3">
-                     <input type="text" id="expense-note" placeholder="項目" class="flex-1 bg-stone-50 border-none rounded-lg px-3 py-2.5 text-sm outline-none">
-                     <input type="number" id="expense-amt" placeholder="日幣" class="w-24 bg-stone-50 border-none rounded-lg px-3 py-2.5 text-sm outline-none">
-                 </div>
-                 <button onclick="addExpense()" class="w-full bg-stone-100 text-stone-700 py-3 rounded-lg text-sm font-bold hover:bg-stone-200 flex items-center justify-center">
-                    <i data-lucide="plus-circle" class="w-4 h-4 mr-2"></i> 加入記帳
-                 </button>
+
+            <!-- Expense Chart -->
+            <div class="mb-6 bg-white p-4 rounded-xl border border-stone-200 shadow-sm">
+                <div class="text-xs font-bold text-stone-400 uppercase mb-2">支出比例</div>
+                <div class="flex h-4 rounded-full overflow-hidden w-full bg-stone-100" id="expense-chart">
+                    <!-- Bars injected by JS -->
+                </div>
+                <div class="flex justify-between mt-2 text-[10px] text-stone-500 font-mono" id="expense-legend">
+                    <!-- Legend injected by JS -->
+                </div>
             </div>
+
+            <!-- Input -->
+            <div class="bg-white p-4 rounded-xl border border-stone-200 shadow-sm mb-6">
+                 <div class="flex gap-2 mb-2">
+                     <input type="text" id="expense-note" placeholder="項目" class="flex-grow bg-stone-50 border-none rounded-lg px-3 py-2.5 text-sm outline-none">
+                     <select id="expense-cat" class="bg-stone-50 border-none rounded-lg px-2 py-2.5 text-xs outline-none text-stone-600 font-bold w-20">
+                         <option value="food">飲食</option>
+                         <option value="shop">購物</option>
+                         <option value="trans">交通</option>
+                         <option value="other">其他</option>
+                     </select>
+                 </div>
+                 <div class="flex gap-2">
+                    <input type="number" id="expense-amt" placeholder="日幣金額" class="flex-grow bg-stone-50 border-none rounded-lg px-3 py-2.5 text-sm outline-none">
+                    <button onclick="addExpense()" class="bg-stone-800 text-white px-6 rounded-lg text-sm font-bold hover:bg-stone-700">新增</button>
+                 </div>
+            </div>
+            <!-- List -->
             <div class="flex justify-between items-end mb-3 px-1">
                 <h3 class="text-sm font-bold text-stone-600">支出明細</h3>
                 <div class="text-right cursor-pointer" onclick="toggleTotalCurrency()">
@@ -171,13 +247,13 @@
         </div>
     </div>
 
-    <!-- Page: Info -->
-    <div id="page-info" class="page h-full overflow-y-auto no-scrollbar bg-stone-50">
-        <div class="sticky top-0 bg-[#F5F5F4]/95 backdrop-blur z-20 border-b border-stone-200 px-5 py-4">
+    <!-- PAGE 5: 資訊 (Info) -->
+    <div id="page-info" class="page no-scrollbar bg-stone-50">
+        <div class="sticky top-0 bg-[#F5F5F4]/95 backdrop-blur z-20 border-b border-stone-200 px-5 py-4 mt-safe-top">
             <h2 class="text-xl font-bold text-stone-800 serif-title">旅程資訊卡</h2>
         </div>
         <div class="p-5 space-y-6">
-            <!-- Cards -->
+            <!-- Finger Cards -->
             <div class="grid grid-cols-2 gap-3">
                 <div onclick="openZoomCard('結帳', 'お会計をお願いします', 'O-kai-kei o o-ne-gai shi-masu')" class="bg-white p-4 rounded-xl border border-stone-200 jp-card cursor-pointer shadow-sm"><div class="text-xs text-stone-400 mb-1">麻煩請結帳</div><div class="font-bold text-stone-800 text-lg serif-title">お会計...</div></div>
                 <div onclick="openZoomCard('洗手間', 'お手洗いはどこですか？', 'O-te-a-rai wa do-ko de-su-ka')" class="bg-white p-4 rounded-xl border border-stone-200 jp-card cursor-pointer shadow-sm"><div class="text-xs text-stone-400 mb-1">請問廁所在哪</div><div class="font-bold text-stone-800 text-lg serif-title">お手洗いは...</div></div>
@@ -195,7 +271,10 @@
             <!-- Hotel -->
             <div class="driver-card rounded-xl p-6 shadow-xl relative overflow-hidden group">
                 <div class="relative z-10">
-                    <div class="flex items-center mb-4"><span class="bg-white/20 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider text-white">Taxi Card</span></div>
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="bg-white/20 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider text-white">Taxi Card</span>
+                        <button onclick="copyAddress('〒541-0041 大阪府大阪市中央区北浜 2-4-11')" class="bg-white/20 hover:bg-white/40 p-1.5 rounded text-white transition-colors"><i data-lucide="copy" class="w-4 h-4"></i></button>
+                    </div>
                     <h3 class="text-sm text-stone-300 mb-1">你好，請載我去這家飯店</h3>
                     <p class="text-xl font-bold serif-title mb-6 leading-relaxed">運転手さん、<br>このホテルまでお願いします。</p>
                     <div class="bg-white/10 p-4 rounded-lg backdrop-blur-sm border border-white/10">
@@ -214,34 +293,148 @@
             </div>
 
             <!-- Emergency -->
-            <div class="pb-10">
+            <div class="pb-2">
                 <h3 class="text-xs font-bold text-stone-400 uppercase tracking-wider mb-3 ml-1">緊急協助</h3>
                 <div class="grid grid-cols-1 gap-3"><a href="tel:+81662278623" class="flex items-center p-4 bg-white border border-stone-200 rounded-xl shadow-sm active:bg-stone-50"><div class="bg-blue-100 p-2.5 rounded-full mr-4"><i data-lucide="building-2" class="w-5 h-5 text-blue-700"></i></div><div><div class="font-bold text-sm text-stone-800">台北駐大阪經濟文化辦事處</div><div class="text-xs text-stone-500">+81-6-6227-8623</div></div></a></div>
                 <div class="grid grid-cols-2 gap-3 mt-3"><a href="tel:110" class="flex items-center p-3 bg-white border border-red-100 rounded-xl shadow-sm active:bg-red-50"><div class="bg-red-100 p-2 rounded-full mr-3"><i data-lucide="phone" class="w-4 h-4 text-red-600"></i></div><span class="font-bold text-sm text-stone-800">報警 110</span></a><a href="tel:119" class="flex items-center p-3 bg-white border border-green-100 rounded-xl shadow-sm active:bg-green-50"><div class="bg-green-100 p-2 rounded-full mr-3"><i data-lucide="ambulance" class="w-4 h-4 text-green-600"></i></div><span class="font-bold text-sm text-stone-800">急救 119</span></a></div>
             </div>
+
+            <!-- Account & Sync Section -->
+            <div class="bg-white rounded-xl border border-stone-200 p-4 shadow-sm mb-8">
+                 <h3 class="text-sm font-bold text-stone-800 mb-3 flex items-center"><i data-lucide="cloud" class="w-4 h-4 mr-2"></i> 資料同步與備份</h3>
+                 <div class="flex flex-col gap-2">
+                     <div id="user-info" class="text-xs text-stone-500 mb-2">目前狀態: <span id="auth-status">未登入 (本機模式)</span></div>
+                     <button onclick="loginWithGoogle()" class="w-full py-2 bg-white border border-stone-300 rounded-lg text-xs font-bold text-stone-700 flex items-center justify-center hover:bg-stone-50">
+                         <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-4 h-4 mr-2"> Google 登入同步
+                     </button>
+                     <div class="flex gap-2 mt-1">
+                         <button onclick="exportData()" class="flex-1 py-2 bg-stone-100 rounded-lg text-xs font-bold text-stone-600 hover:bg-stone-200 flex items-center justify-center">
+                             <i data-lucide="download" class="w-3 h-3 mr-1"></i> 匯出備份
+                         </button>
+                         <label class="flex-1 py-2 bg-stone-100 rounded-lg text-xs font-bold text-stone-600 hover:bg-stone-200 flex items-center justify-center cursor-pointer">
+                             <input type="file" accept=".json" class="hidden" onchange="importData(event)">
+                             <i data-lucide="upload" class="w-3 h-3 mr-1"></i> 匯入還原
+                         </label>
+                     </div>
+                 </div>
+            </div>
         </div>
     </div>
+
+    <!-- FIXED BOTTOM NAVIGATION -->
+    <nav class="fixed bottom-0 left-0 right-0 w-full bg-[#F5F5F4]/95 backdrop-blur border-t border-stone-200 pb-safe z-[50] rounded-t-xl shadow-[0_-5px_20px_rgba(0,0,0,0.02)] h-20">
+        <div class="flex justify-around items-center h-full pb-2">
+            <button onclick="switchPage('flight')" class="nav-item active flex flex-col items-center justify-center w-full text-stone-300 transition-colors" id="nav-flight">
+                <i data-lucide="calendar-days" class="w-5 h-5 mb-0.5"></i>
+                <span class="text-[9px] font-medium">行程</span>
+            </button>
+            <button onclick="switchPage('shopping')" class="nav-item flex flex-col items-center justify-center w-full text-stone-300 transition-colors" id="nav-shopping">
+                <i data-lucide="shopping-bag" class="w-5 h-5 mb-0.5"></i>
+                <span class="text-[9px] font-medium">購物</span>
+            </button>
+            <button onclick="switchPage('luggage')" class="nav-item flex flex-col items-center justify-center w-full text-stone-300 transition-colors" id="nav-luggage">
+                <i data-lucide="briefcase" class="w-5 h-5 mb-0.5"></i>
+                <span class="text-[9px] font-medium">行李</span>
+            </button>
+            <button onclick="switchPage('money')" class="nav-item flex flex-col items-center justify-center w-full text-stone-300 transition-colors" id="nav-money">
+                <i data-lucide="wallet" class="w-5 h-5 mb-0.5"></i>
+                <span class="text-[9px] font-medium">記帳</span>
+            </button>
+            <button onclick="switchPage('info')" class="nav-item flex flex-col items-center justify-center w-full text-stone-300 transition-colors" id="nav-info">
+                <i data-lucide="info" class="w-5 h-5 mb-0.5"></i>
+                <span class="text-[9px] font-medium">資訊</span>
+            </button>
+        </div>
+    </nav>
 
     <!-- Modals -->
     <div id="zoom-modal" class="fixed inset-0 bg-black/90 z-[200] hidden flex flex-col justify-center items-center p-6 animate-fade-in" onclick="closeZoomCard()"><div class="text-white text-center w-full max-w-lg" onclick="event.stopPropagation()"><h3 id="zoom-title" class="text-stone-400 text-sm font-bold uppercase tracking-widest mb-6">TITLE</h3><div id="zoom-jp" class="text-4xl sm:text-5xl font-bold serif-title leading-snug mb-6 text-white"></div><div id="zoom-ro" class="text-stone-400 font-mono text-sm mb-12"></div><button onclick="closeZoomCard()" class="px-8 py-3 rounded-full border border-white/30 text-white text-sm hover:bg-white/10 transition-colors">關閉 (Close)</button></div></div>
     
-    <div id="add-modal" class="fixed inset-0 bg-stone-900/60 z-[100] hidden flex items-end sm:items-center justify-center sm:p-4 backdrop-blur-sm"><div class="bg-white rounded-t-2xl sm:rounded-2xl w-full max-w-sm p-6 shadow-2xl animate-slide-up"><div class="flex justify-between items-center mb-6"><h3 class="text-lg font-bold text-stone-800" id="modal-title">新增行程</h3><button onclick="closeAddModal()" class="p-2 bg-stone-100 rounded-full hover:bg-stone-200"><i data-lucide="x" class="w-4 h-4"></i></button></div><input type="hidden" id="edit-id" value=""><div class="space-y-4"><div><label class="text-[10px] font-bold text-stone-400 uppercase block mb-1">標題</label><input type="text" id="new-title" class="w-full border-b border-stone-200 py-2 outline-none bg-transparent text-lg font-sans"></div><div><label class="text-[10px] font-bold text-stone-400 uppercase block mb-1">地圖定位 (Google Maps 關鍵字)</label><input type="text" id="new-location" class="w-full border-b border-stone-200 py-2 outline-none bg-transparent text-sm font-sans"><p class="text-[10px] text-stone-400 mt-1">* 輸入地址或店名，導航更準確</p></div><div class="grid grid-cols-2 gap-4"><div><label class="text-[10px] font-bold text-stone-400 uppercase block mb-1">時間</label><input type="time" id="new-time" class="w-full border-b border-stone-200 py-2 outline-none bg-transparent font-mono"></div><div><label class="text-[10px] font-bold text-stone-400 uppercase block mb-1">日期</label><select id="new-day" class="w-full border-b border-stone-200 py-2 outline-none bg-transparent"></select></div></div><div><label class="text-[10px] font-bold text-stone-400 uppercase block mb-2">分類</label><div class="grid grid-cols-4 gap-2"><label class="cursor-pointer"><input type="radio" name="new-type" value="food" class="peer hidden" checked><div class="flex flex-col items-center justify-center p-2 bg-stone-50 rounded-lg border border-stone-100 peer-checked:bg-orange-100 peer-checked:text-orange-700"><i data-lucide="utensils" class="w-4 h-4"></i><span class="text-[10px] mt-1 font-bold">美食</span></div></label><label class="cursor-pointer"><input type="radio" name="new-type" value="spot" class="peer hidden"><div class="flex flex-col items-center justify-center p-2 bg-stone-50 rounded-lg border border-stone-100 peer-checked:bg-stone-200 peer-checked:text-stone-800"><i data-lucide="map-pin" class="w-4 h-4"></i><span class="text-[10px] mt-1 font-bold">景點</span></div></label><label class="cursor-pointer"><input type="radio" name="new-type" value="shop" class="peer hidden"><div class="flex flex-col items-center justify-center p-2 bg-stone-50 rounded-lg border border-stone-100 peer-checked:bg-sky-100 peer-checked:text-sky-700"><i data-lucide="shopping-bag" class="w-4 h-4"></i><span class="text-[10px] mt-1 font-bold">購物</span></div></label><label class="cursor-pointer"><input type="radio" name="new-type" value="flight" class="peer hidden"><div class="flex flex-col items-center justify-center p-2 bg-stone-50 rounded-lg border border-stone-100 peer-checked:bg-stone-200 peer-checked:text-stone-700"><i data-lucide="plane" class="w-4 h-4"></i><span class="text-[10px] mt-1 font-bold">飛行</span></div></label></div></div></div><button onclick="saveItineraryItem()" class="mt-8 w-full py-3.5 rounded-xl bg-stone-800 text-white font-bold shadow-lg hover:bg-black active:scale-[0.98] transition-all flex items-center justify-center"><i data-lucide="check" class="w-4 h-4 mr-2"></i> <span id="modal-btn-text">確認新增</span></button></div></div>
+    <div id="add-modal" class="fixed inset-0 bg-stone-900/60 z-[100] hidden flex items-end sm:items-center justify-center sm:p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-t-2xl sm:rounded-2xl w-full max-w-sm p-6 shadow-2xl animate-slide-up max-h-[90vh] overflow-y-auto no-scrollbar">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-lg font-bold text-stone-800" id="modal-title">新增行程</h3>
+                <button onclick="closeAddModal()" class="p-2 bg-stone-100 rounded-full hover:bg-stone-200"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+            <input type="hidden" id="edit-id" value="">
+            <input type="hidden" id="new-lat" value="">
+            <input type="hidden" id="new-lng" value="">
+
+            <div class="space-y-4">
+                <div>
+                    <label class="text-[10px] font-bold text-stone-400 uppercase block mb-1">標題</label>
+                    <input type="text" id="new-title" class="w-full border-b border-stone-200 py-2 outline-none bg-transparent text-lg font-sans">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-stone-400 uppercase block mb-1">地點資訊</label>
+                    <input type="text" id="new-location" placeholder="輸入名稱 (如: 心齋橋)" class="w-full border-b border-stone-200 py-2 outline-none bg-transparent text-sm font-sans mb-2">
+                    <!-- Map Picker -->
+                    <div class="relative w-full h-40 bg-stone-100 rounded-lg overflow-hidden border border-stone-200 group">
+                         <div id="picker-map" class="w-full h-full z-0"></div>
+                         <div class="absolute top-2 right-2 z-10 bg-white px-2 py-1 rounded shadow text-[10px] font-bold text-stone-500 opacity-80">點擊地圖設定位置</div>
+                    </div>
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-stone-400 uppercase block mb-1">備註 / 筆記</label>
+                    <textarea id="new-note" rows="3" placeholder="例如：預約號碼 #1234、必點螃蟹..." class="w-full bg-stone-50 border border-stone-200 rounded-lg p-3 text-sm outline-none resize-none"></textarea>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-[10px] font-bold text-stone-400 uppercase block mb-1">時間</label>
+                        <input type="time" id="new-time" class="w-full border-b border-stone-200 py-2 outline-none bg-transparent font-mono">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-stone-400 uppercase block mb-1">日期</label>
+                        <select id="new-day" class="w-full border-b border-stone-200 py-2 outline-none bg-transparent"></select>
+                    </div>
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-stone-400 uppercase block mb-2">分類</label>
+                    <div class="grid grid-cols-4 gap-2">
+                        <!-- 
+                           修改為極簡柔和風格
+                           美食 (咖啡色系): bg-amber-50, border-amber-200, text-amber-800
+                           景點 (灰色系): bg-stone-50, border-stone-200, text-stone-600
+                           購物 (藍色系): bg-slate-50, border-slate-200, text-slate-700 (低飽和藍)
+                           飛行 (橘色系): bg-orange-50, border-orange-200, text-orange-800
+                        -->
+                        <label class="cursor-pointer">
+                            <input type="radio" name="new-type" value="food" class="peer hidden" checked>
+                            <div class="flex flex-col items-center justify-center p-2 bg-amber-50 rounded-lg border border-amber-100 peer-checked:bg-amber-100 peer-checked:border-amber-300 peer-checked:text-amber-800 transition-colors">
+                                <i data-lucide="utensils" class="w-4 h-4"></i><span class="text-[10px] mt-1 font-bold">美食</span>
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="new-type" value="spot" class="peer hidden">
+                            <div class="flex flex-col items-center justify-center p-2 bg-stone-50 rounded-lg border border-stone-200 peer-checked:bg-stone-200 peer-checked:border-stone-400 peer-checked:text-stone-800 transition-colors">
+                                <i data-lucide="map-pin" class="w-4 h-4"></i><span class="text-[10px] mt-1 font-bold">景點</span>
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="new-type" value="shop" class="peer hidden">
+                            <div class="flex flex-col items-center justify-center p-2 bg-slate-50 rounded-lg border border-slate-200 peer-checked:bg-slate-200 peer-checked:border-slate-400 peer-checked:text-slate-700 transition-colors">
+                                <i data-lucide="shopping-bag" class="w-4 h-4"></i><span class="text-[10px] mt-1 font-bold">購物</span>
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="new-type" value="flight" class="peer hidden">
+                            <div class="flex flex-col items-center justify-center p-2 bg-orange-50 rounded-lg border border-orange-100 peer-checked:bg-orange-100 peer-checked:border-orange-300 peer-checked:text-orange-800 transition-colors">
+                                <i data-lucide="plane" class="w-4 h-4"></i><span class="text-[10px] mt-1 font-bold">飛行</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <button onclick="saveItineraryItem()" class="mt-8 w-full py-3.5 rounded-xl bg-stone-800 text-white font-bold shadow-lg hover:bg-black active:scale-[0.98] transition-all flex items-center justify-center">
+                <i data-lucide="check" class="w-4 h-4 mr-2"></i> <span id="modal-btn-text">確認新增</span>
+            </button>
+        </div>
+    </div>
 
     <!-- Scripts -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        const TRIP_START = new Date('2025-12-13T00:00:00');
-        const TOTAL_DAYS = 6;
-        const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-        const SCENIC_IMAGES = ["https://images.unsplash.com/photo-1542051841857-5f90071e7989?q=80&w=1200", "https://images.unsplash.com/photo-1505337833003-88220268523c?q=80&w=1200", "https://images.unsplash.com/photo-1478436127897-769e1b3f0f36?q=80&w=1200", "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?q=80&w=1200", "https://images.unsplash.com/photo-1572975765715-288219662e08?q=80&w=1200", "https://images.unsplash.com/photo-1605626993138-03822295696d?q=80&w=1200"];
-        const WEATHER_DATA = [{icon:'⛅',temp:'8°/14°',rain:'10%'},{icon:'☀️',temp:'7°/15°',rain:'0%'},{icon:'☀️',temp:'6°/13°',rain:'0%'},{icon:'☁️',temp:'8°/12°',rain:'20%'},{icon:'🌧️',temp:'5°/10°',rain:'60%'},{icon:'⛅',temp:'6°/13°',rain:'10%'}];
-        
-        let currentDayIndex = 0;
-        let mapInstance = null;
-        let userHeaderImage = localStorage.getItem('osaka_header_img');
-        let itineraryData = [], luggageData = [], expenses = [], infoNotes = [];
-
-        // --- CONFIG ---
+        // CONFIG
         const firebaseConfig = {
             apiKey: "AIzaSyBGmvolsS8AgPfm09qynSVIz5GOcvXDKCM",
             authDomain: "osaka-family-trip.firebaseapp.com",
@@ -254,56 +447,99 @@
         const appId = 'osaka-2025-v4-map';
         let db = null, auth = null;
 
+        const TRIP_START = new Date('2025-12-13T00:00:00');
+        const TOTAL_DAYS = 6;
+        const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const SCENIC_IMAGES = ["https://images.unsplash.com/photo-1542051841857-5f90071e7989?q=80&w=1200", "https://images.unsplash.com/photo-1505337833003-88220268523c?q=80&w=1200", "https://images.unsplash.com/photo-1478436127897-769e1b3f0f36?q=80&w=1200", "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?q=80&w=1200", "https://images.unsplash.com/photo-1572975765715-288219662e08?q=80&w=1200", "https://images.unsplash.com/photo-1605626993138-03822295696d?q=80&w=1200"];
+        const WEATHER_DATA = [{icon:'⛅',temp:'8°/14°',rain:'10%'},{icon:'☀️',temp:'7°/15°',rain:'0%'},{icon:'☀️',temp:'6°/13°',rain:'0%'},{icon:'☁️',temp:'8°/12°',rain:'20%'},{icon:'🌧️',temp:'5°/10°',rain:'60%'},{icon:'⛅',temp:'6°/13°',rain:'10%'}];
+        
+        let currentDayIndex = 0;
+        let mapInstance = null;
+        let pickerMap = null, pickerMarker = null;
+        let userHeaderImage = localStorage.getItem('osaka_header_img');
+        let itineraryData = [], luggageData = [], expenses = [], infoNotes = [], shoppingData = [];
+        let currentUser = null;
+        let tempShopImg = null;
+
+        // DEFAULT DATA
         const DEFAULT_ITINERARY = [
-            { id: 'd1_1', day: 0, time: '15:25', title: 'KHH 高雄起飛 (CI 176)', type: 'flight', location: '高雄小港機場', lat: 22.57, lng: 120.35 },
-            { id: 'd1_2', day: 0, time: '19:10', title: '抵達關西機場 (KIX)', type: 'flight', location: '關西國際機場', lat: 34.434, lng: 135.235 },
-            { id: 'd1_3', day: 0, time: '20:30', title: '前往飯店 Check-in', type: 'spot', location: 'Ostay Vermillion Kitahama', lat: 34.691, lng: 135.506 },
+            { id: 'd1_1', day: 0, time: '15:25', title: 'KHH 高雄起飛 (CI 176)', type: 'flight', location: '高雄小港機場', lat: 22.57, lng: 120.35, note: '航廈 2, 提早2小時報到' },
+            { id: 'd1_2', day: 0, time: '19:10', title: '抵達關西機場 (KIX)', type: 'flight', location: '關西國際機場', lat: 34.434, lng: 135.235, note: '入境審查預計 1 小時' },
+            { id: 'd1_3', day: 0, time: '20:30', title: '前往飯店 Check-in', type: 'spot', location: 'Ostay Vermillion Kitahama', lat: 34.691, lng: 135.506, note: '訂房代號: #882233' },
             { id: 'd2_1', day: 1, time: '10:00', title: '大阪城公園', type: 'spot', location: '大阪城公園', lat: 34.687, lng: 135.526 },
-            { id: 'd2_2', day: 1, time: '12:00', title: '午餐: 大阪城周邊', type: 'food', location: 'Jo-Terrace Osaka', lat: 34.689, lng: 135.531 },
-            { id: 'd3_1', day: 2, time: '10:00', title: '麵包超人博物館', type: 'spot', location: '神戶麵包超人兒童博物館', lat: 34.680, lng: 135.186 },
-            { id: 'd3_2', day: 2, time: '13:00', title: '馬賽克廣場午餐', type: 'food', location: 'Mosaic Kobe', lat: 34.679, lng: 135.185 },
-            { id: 'd4_1', day: 3, time: '11:00', title: '梅田購物逛街', type: 'shop', location: 'Grand Front Osaka', lat: 34.704, lng: 135.495 },
-            { id: 'd4_2', day: 3, time: '18:00', title: '梅田藍天大廈夜景', type: 'spot', location: '梅田藍天大廈', lat: 34.705, lng: 135.490 },
-            { id: 'd5_1', day: 4, time: '09:00', title: '前往京都', type: 'spot', location: 'Kyoto Station', lat: 34.985, lng: 135.758 },
-            { id: 'd5_2', day: 4, time: '10:30', title: '清水寺 & 二三年坂', type: 'spot', location: '清水寺', lat: 34.994, lng: 135.785 },
-            { id: 'd5_3', day: 4, time: '18:00', title: '返回大阪', type: 'spot', location: 'Ostay Vermillion Kitahama', lat: 34.691, lng: 135.506 },
-            { id: 'd6_1', day: 5, time: '17:30', title: '前往關西機場', type: 'spot', location: 'Kansai Airport', lat: 34.434, lng: 135.235 },
-            { id: 'd6_2', day: 5, time: '20:10', title: 'KIX 起飛 (CI 177)', type: 'flight', location: 'Kansai Airport', lat: 34.434, lng: 135.235 },
-            { id: 'd6_3', day: 5, time: '22:45', title: '抵達高雄 (KHH)', type: 'flight', location: 'Kaohsiung Airport', lat: 22.57, lng: 120.35 }
+            { id: 'd2_2', day: 1, time: '12:00', title: '午餐: 大阪城周邊', type: 'food', location: 'Jo-Terrace Osaka', lat: 34.689, lng: 135.531 }
         ];
 
         // INIT
         document.addEventListener('DOMContentLoaded', async () => {
-            lucide.createIcons();
-            initDateTabs();
-            initWeather();
-            // Default Init (Local) for fast load
-            initItineraryLocal();
-            initLuggageLocal();
-            initExpensesLocal();
-            initInfoNotesLocal();
-
-            // Firebase Init
-            try {
-                firebase.initializeApp(firebaseConfig);
-                db = firebase.firestore();
-                auth = firebase.auth();
-                await auth.signInAnonymously();
-                setupSyncListeners();
-            } catch(e) { 
-                console.error("Firebase Init Error:", e);
-                db = null; // Ensure db is null to trigger local fallback
-            }
-
+            lucide.createIcons(); initDateTabs(); initWeather(); initItineraryLocal(); initLuggageLocal(); initExpensesLocal(); initInfoNotesLocal(); initShoppingLocal();
+            
+            // Map Picker Init
             setTimeout(() => {
-                document.getElementById('splash-screen').style.opacity = '0';
-                setTimeout(() => {
-                    document.getElementById('splash-screen').style.display = 'none';
-                    document.getElementById('page-flight').classList.add('active');
-                    renderItineraryList();
-                }, 800);
-            }, 2000);
+                pickerMap = L.map('picker-map').setView([34.6937, 135.5023], 13);
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{maxZoom:19}).addTo(pickerMap);
+                pickerMap.on('click', function(e) {
+                    if(pickerMarker) pickerMarker.remove();
+                    pickerMarker = L.marker(e.latlng).addTo(pickerMap);
+                    document.getElementById('new-lat').value = e.latlng.lat;
+                    document.getElementById('new-lng').value = e.latlng.lng;
+                });
+            }, 1000);
+
+            try {
+                firebase.initializeApp(firebaseConfig); db = firebase.firestore(); auth = firebase.auth();
+                auth.onAuthStateChanged(user => {
+                    currentUser = user;
+                    if(user) {
+                        document.getElementById('auth-status').innerText = `已登入: ${user.isAnonymous ? '訪客' : user.displayName || user.email}`;
+                        document.getElementById('auth-status').classList.add('text-green-600');
+                        setupSyncListeners();
+                        updateStatus(true);
+                    } else {
+                        auth.signInAnonymously();
+                    }
+                });
+            } catch(e) { console.error("Firebase Err:", e); updateStatus(false); }
+            setTimeout(() => { document.getElementById('splash-screen').style.opacity = '0'; setTimeout(() => { document.getElementById('splash-screen').style.display = 'none'; document.getElementById('page-flight').classList.add('active'); renderItineraryList(); }, 800); }, 2000);
         });
+
+        // --- AUTH & DATA MANAGEMENT ---
+        async function loginWithGoogle() {
+            if(!auth) return alert("Firebase 未初始化");
+            const provider = new firebase.auth.GoogleAuthProvider();
+            try { await auth.signInWithPopup(provider); } catch(error) { alert("登入失敗: " + error.message + "\n\n提示: 若在 App 內嵌瀏覽器中，Google 登入常會被封鎖。請使用「匯出備份」功能。"); }
+        }
+
+        function exportData() {
+            const data = { itinerary: itineraryData, luggage: luggageData, expenses: expenses, notes: infoNotes, shopping: shoppingData, exportedAt: Date.now() };
+            const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url; a.download = `osaka_trip_backup_${new Date().toISOString().slice(0,10)}.json`; a.click();
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if(data.itinerary) { itineraryData = data.itinerary; localStorage.setItem('osaka_itinerary_2025_v5', JSON.stringify(itineraryData)); }
+                    if(data.luggage) { luggageData = data.luggage; localStorage.setItem('osaka_luggage_2025_v2', JSON.stringify(luggageData)); }
+                    if(data.expenses) { expenses = data.expenses; localStorage.setItem('osaka_expenses_2025', JSON.stringify(expenses)); }
+                    if(data.notes) { infoNotes = data.notes; localStorage.setItem('osaka_notes_2025', JSON.stringify(infoNotes)); }
+                    if(data.shopping) { shoppingData = data.shopping; localStorage.setItem('osaka_shopping_2025', JSON.stringify(shoppingData)); }
+                    alert('匯入成功！請重新整理頁面。'); location.reload();
+                } catch(err) { alert('檔案格式錯誤'); }
+            };
+            reader.readAsText(file);
+        }
+
+        function updateStatus(online) {
+            const el = document.getElementById('connection-status');
+            el.className = online ? 'status-online' : 'status-offline';
+            el.title = online ? '已連線同步中' : '單機模式 (未同步)';
+        }
 
         function switchPage(p) {
             document.querySelectorAll('.page').forEach(e=>e.classList.remove('active'));
@@ -315,42 +551,44 @@
             if(p==='flight' && mapInstance) setTimeout(()=>mapInstance.invalidateSize(),100);
         }
 
-        // --- FIREBASE SYNC SETUP ---
+        function copyAddress(text) {
+            const temp = document.createElement("textarea");
+            temp.value = text;
+            document.body.appendChild(temp);
+            temp.select();
+            document.execCommand("copy");
+            document.body.removeChild(temp);
+            alert("地址已複製！");
+        }
+
+        // --- SYNC LISTENERS ---
         function setupSyncListeners() {
             if(!db) return;
-            // Itinerary
-            db.collection('artifacts').doc(appId).collection('public').doc('data').collection('itinerary')
-              .onSnapshot(snap => {
-                  const fetched = snap.docs.map(d => ({id: d.id, ...d.data()}));
-                  if(fetched.length === 0) {
-                      DEFAULT_ITINERARY.forEach(async f => await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('itinerary').add({...f, created: Date.now()}));
-                  } else {
-                      itineraryData = fetched;
-                      renderItineraryList();
-                  }
-              });
-            // Luggage
-            db.collection('artifacts').doc(appId).collection('public').doc('data').collection('luggage')
-              .onSnapshot(snap => {
-                  luggageData = snap.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b) => a.created - b.created);
-                  if(luggageData.length === 0) {
-                      [{text:'護照',checked:false},{text:'網卡',checked:false},{text:'日幣',checked:false}].forEach(async i => await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('luggage').add({...i, created: Date.now()}));
-                  } else {
-                      renderLuggage();
-                  }
-              });
-            // Expenses
-            db.collection('artifacts').doc(appId).collection('public').doc('data').collection('expenses')
-              .onSnapshot(snap => {
-                  expenses = snap.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b) => b.created - a.created);
-                  renderExpenses();
-              });
-            // Notes
-            db.collection('artifacts').doc(appId).collection('public').doc('data').collection('notes')
-              .onSnapshot(snap => {
-                  infoNotes = snap.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b) => a.created - b.created);
-                  renderInfoNotes();
-              });
+            const publicRef = db.collection('artifacts').doc(appId).collection('public').doc('data');
+            
+            publicRef.collection('itinerary').onSnapshot(snap => {
+                const fetched = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                if(fetched.length === 0 && itineraryData.length === 0) { 
+                    DEFAULT_ITINERARY.forEach(async f => await publicRef.collection('itinerary').add({...f, created: Date.now()})); 
+                } else if(fetched.length > 0) { itineraryData = fetched; renderItineraryList(); }
+            }, () => updateStatus(false));
+
+            publicRef.collection('luggage').onSnapshot(snap => {
+                const fetched = snap.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b) => a.created - b.created);
+                if(fetched.length > 0) { luggageData = fetched; renderLuggage(); }
+            });
+            publicRef.collection('expenses').onSnapshot(snap => {
+                const fetched = snap.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b) => b.created - a.created);
+                if(fetched.length > 0) { expenses = fetched; renderExpenses(); }
+            });
+            publicRef.collection('notes').onSnapshot(snap => {
+                const fetched = snap.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b) => a.created - b.created);
+                if(fetched.length > 0) { infoNotes = fetched; renderInfoNotes(); }
+            });
+            publicRef.collection('shopping').onSnapshot(snap => {
+                const fetched = snap.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b) => b.created - a.created);
+                if(fetched.length > 0) { shoppingData = fetched; renderShopping(); }
+            });
         }
 
         // --- LOCAL FALLBACKS ---
@@ -358,30 +596,118 @@
         function initLuggageLocal() { const s = localStorage.getItem('osaka_luggage_2025_v2'); luggageData = s ? JSON.parse(s) : []; renderLuggage(); }
         function initExpensesLocal() { const s = localStorage.getItem('osaka_expenses_2025'); expenses = s ? JSON.parse(s) : []; renderExpenses(); }
         function initInfoNotesLocal() { const s = localStorage.getItem('osaka_notes_2025'); infoNotes = s ? JSON.parse(s) : []; renderInfoNotes(); }
+        function initShoppingLocal() { const s = localStorage.getItem('osaka_shopping_2025'); shoppingData = s ? JSON.parse(s) : []; renderShopping(); }
 
-        // --- ACTIONS (WITH ERROR HANDLING) ---
+        // --- ITINERARY ---
+        function renderItineraryList(){
+            const l=document.getElementById('itinerary-list');l.innerHTML='';
+            const d=itineraryData.filter(i=>parseInt(i.day)===currentDayIndex).sort((a,b)=>a.time.localeCompare(b.time));
+            if(d.length===0){l.innerHTML=`<div class="text-center py-10 opacity-30"><p class="text-xs">尚無行程</p></div>`;return;}
+            d.forEach(i=>{
+                // NEW COLOR SCHEME (Minimalist & Low Saturation)
+                // Default border color is stone-100 if type doesn't match
+                let borderClass = 'border-l-stone-100';
+                let iconColor = 'text-stone-300';
+                let iconName = 'map-pin';
+                let badgeClass = 'bg-stone-50 text-stone-500'; // Default Badge
+
+                if(i.type==='food'){
+                    // 柔和拿鐵色
+                    borderClass = 'border-l-amber-200';
+                    iconColor = 'text-amber-800'; // icon 保持深色易讀
+                    iconName = 'utensils';
+                    badgeClass = 'bg-amber-50 text-amber-800';
+                }
+                else if(i.type==='shop'){
+                    // 柔和霧霾藍 (Slate/Blue mix)
+                    borderClass = 'border-l-slate-300';
+                    iconColor = 'text-slate-600';
+                    iconName = 'shopping-bag';
+                    badgeClass = 'bg-slate-50 text-slate-700';
+                }
+                else if(i.type==='flight'){
+                    // 柔和橘色
+                    borderClass = 'border-l-orange-200';
+                    iconColor = 'text-orange-800';
+                    iconName = 'plane';
+                    badgeClass = 'bg-orange-50 text-orange-800';
+                }
+                else if(i.type==='spot'){
+                    // 柔和暖灰
+                    borderClass = 'border-l-stone-300';
+                    iconColor = 'text-stone-600';
+                    iconName = 'map-pin';
+                    badgeClass = 'bg-stone-100 text-stone-600';
+                }
+
+                const u=`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(i.location||i.title)}`;
+                const el=document.createElement('div');
+                // 主要改變：bg-white, border-l-4 (加粗左側線條), 移除整體邊框顏色
+                el.className=`flex flex-col p-4 rounded-xl bg-white border border-stone-100 ${borderClass} border-l-4 relative group transition-all mb-2 shadow-sm`;
+                el.innerHTML=`
+                    <div class="flex items-center">
+                        <div class="mr-4 text-center min-w-[3.5rem]"><div class="text-lg font-bold font-mono text-stone-800 leading-none">${i.time}</div></div>
+                        <div class="flex-1 border-l border-stone-100 pl-4 py-1">
+                            <div class="flex justify-between items-start"><h3 class="font-bold text-stone-800 text-sm">${i.title}</h3></div>
+                            <div class="flex items-center mt-1">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold ${badgeClass} mr-2">${i.type}</span>
+                                ${i.location&&i.location!==i.title?`<span class="text-[10px] text-stone-400 truncate max-w-[120px] flex items-center"><i data-lucide="map-pin" class="inline w-2 h-2 mr-1"></i>${i.location}</span>`:''}
+                            </div>
+                        </div>
+                        <div class="flex flex-col gap-2 ml-2">
+                            <a href="${u}" target="_blank" class="p-2 bg-white border border-stone-100 rounded-full text-stone-400 hover:text-blue-600 shadow-sm"><i data-lucide="navigation" class="w-4 h-4"></i></a>
+                            <div class="flex gap-1">
+                                <button onclick="openEditModal('${i.id}')" class="p-2 bg-white border border-stone-100 rounded-full text-stone-400 hover:text-stone-800 shadow-sm"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+                                <button onclick="deleteItinerary('${i.id}')" class="p-2 bg-white border border-stone-100 rounded-full text-stone-400 hover:text-red-500 shadow-sm"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                    ${i.note ? `<div class="mt-3 ml-[4.5rem] bg-stone-50 p-2 rounded text-xs text-stone-500 flex items-start"><i data-lucide="sticky-note" class="w-3 h-3 mr-1.5 mt-0.5 opacity-50 flex-shrink-0"></i>${i.note}</div>` : ''}
+                `;
+                l.appendChild(el);
+            });
+            // Map
+            const m=d.filter(i=>i.lat&&i.lng);
+            const mc=document.createElement('div');
+            mc.className="mt-6 overflow-hidden rounded-2xl shadow-md border border-stone-200 bg-white";
+            mc.innerHTML=`<div class="h-64 w-full relative z-0" id="map-wrap-${currentDayIndex}"></div><div class="p-3 bg-white text-center border-t border-stone-100"><a href="#" id="google-maps-btn" target="_blank" class="block w-full py-2 bg-blue-50 text-blue-600 rounded-lg text-xs font-bold hover:bg-blue-100 transition-colors"><i data-lucide="external-link" class="w-3 h-3 inline mr-1"></i> 開啟 Google Maps 導航</a></div>`;
+            l.appendChild(mc);
+            setTimeout(()=>{
+                const mid=`map-wrap-${currentDayIndex}`;
+                if(document.getElementById(mid)){
+                    if(mapInstance){mapInstance.remove();mapInstance=null;}
+                    const c=m.length>0?[m[0].lat,m[0].lng]:[34.6937,135.5023];
+                    mapInstance=L.map(mid).setView(c,13);
+                    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{attribution:'&copy; OSM',maxZoom:19}).addTo(mapInstance);
+                    const b=[];
+                    m.forEach(i=>{L.marker([i.lat,i.lng]).addTo(mapInstance).bindPopup(i.title);b.push([i.lat,i.lng]);});
+                    if(b.length>1)mapInstance.fitBounds(b,{padding:[50,50]});
+                    const q=m.map(i=>i.title).join('/');
+                    document.getElementById('google-maps-btn').href=m.length?`https://www.google.com/maps/dir/${q}`:`https://www.google.com/maps/search/Osaka`;
+                }
+            },100);
+            lucide.createIcons();
+        }
+        
         async function saveItineraryItem() {
             const id = document.getElementById('edit-id').value;
             const title = document.getElementById('new-title').value;
             const location = document.getElementById('new-location').value;
             const time = document.getElementById('new-time').value;
+            const note = document.getElementById('new-note').value;
             const day = parseInt(document.getElementById('new-day').value);
             const type = document.querySelector('input[name="new-type"]:checked').value;
+            let lat = parseFloat(document.getElementById('new-lat').value);
+            let lng = parseFloat(document.getElementById('new-lng').value);
             if(!title || !time) return alert('請填寫完整');
-            
-            const itemData = { title, location: location || title, time, day, type, created: Date.now() };
-            if(type !== 'flight') { itemData.lat = 34.6937 + (Math.random()*0.02-0.01); itemData.lng = 135.5023 + (Math.random()*0.02-0.01); } 
-
+            if(!lat || !lng) { lat = 34.6937 + (Math.random()*0.02-0.01); lng = 135.5023 + (Math.random()*0.02-0.01); }
+            const itemData = { title, location: location || title, time, day, type, note, lat, lng, created: Date.now() };
             try {
                 if(db) {
                     if(id) await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('itinerary').doc(id).update(itemData);
                     else await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('itinerary').add(itemData);
-                } else {
-                    throw new Error("Local Mode");
-                }
+                } else throw new Error();
             } catch(e) {
-                console.warn("Cloud save failed, using local", e);
-                // Fallback
                 if(id) itineraryData = itineraryData.map(i => i.id === id ? { ...i, ...itemData, id } : i);
                 else itineraryData.push({ ...itemData, id: Date.now().toString() });
                 localStorage.setItem('osaka_itinerary_2025_v5', JSON.stringify(itineraryData));
@@ -389,89 +715,137 @@
             }
             closeAddModal();
         }
-
         async function deleteItinerary(id) {
             if(!confirm('確認刪除？')) return;
-            try {
-                if(db) await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('itinerary').doc(id).delete();
-                else throw new Error("Local Mode");
-            } catch(e) {
-                console.warn("Cloud delete failed", e);
-                itineraryData = itineraryData.filter(i => i.id !== id);
-                localStorage.setItem('osaka_itinerary_2025_v5', JSON.stringify(itineraryData));
-                renderItineraryList();
+            try { if(db) await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('itinerary').doc(id).delete(); else throw new Error(); } catch(e) {
+                itineraryData = itineraryData.filter(i => i.id !== id); localStorage.setItem('osaka_itinerary_2025_v5', JSON.stringify(itineraryData)); renderItineraryList();
             }
         }
 
-        // Render Functions
-        function renderItineraryList() {
-            const list = document.getElementById('itinerary-list'); list.innerHTML = '';
-            const dayItems = itineraryData.filter(i => parseInt(i.day) === currentDayIndex).sort((a,b) => a.time.localeCompare(b.time));
-            if(dayItems.length === 0) { list.innerHTML = `<div class="text-center py-10 opacity-30"><p class="text-xs">尚無行程</p></div>`; return; }
-            dayItems.forEach(item => {
-                let bg='bg-white border-stone-100', ic='text-stone-300', icon='map-pin';
-                if(item.type==='food'){bg='bg-orange-50/50 border-orange-100';ic='text-orange-400';icon='utensils';}
-                else if(item.type==='shop'){bg='bg-sky-50/50 border-sky-100';ic='text-sky-400';icon='shopping-bag';}
-                else if(item.type==='flight'){bg='bg-stone-100 border-stone-200';ic='text-stone-400';icon='plane';}
-                const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.location||item.title)}`;
-                const div = document.createElement('div');
-                div.className = `flex items-center p-4 rounded-xl border ${bg} relative group transition-all mb-2 shadow-sm`;
-                div.innerHTML = `<div class="mr-4 text-center min-w-[3.5rem]"><div class="text-lg font-bold font-mono text-stone-800 leading-none">${item.time}</div></div><div class="flex-1 border-l border-stone-200 pl-4 py-1"><div class="flex justify-between items-start"><h3 class="font-bold text-stone-800 text-sm">${item.title}</h3></div><div class="flex items-center mt-1"><i data-lucide="${icon}" class="w-3 h-3 mr-1.5 ${ic}"></i><span class="text-[10px] text-stone-400 uppercase tracking-wider font-bold">${item.type}</span>${item.location && item.location!==item.title ? `<span class="ml-2 text-[10px] text-stone-300 truncate max-w-[100px]"><i data-lucide="map-pin" class="inline w-2 h-2"></i> ${item.location}</span>`:''}</div></div><div class="flex flex-col gap-2 ml-2"><a href="${mapUrl}" target="_blank" class="p-2 bg-white border border-stone-100 rounded-full text-stone-400 hover:text-blue-600 shadow-sm"><i data-lucide="navigation" class="w-4 h-4"></i></a><div class="flex gap-1"><button onclick="openEditModal('${item.id}')" class="p-2 bg-white border border-stone-100 rounded-full text-stone-400 hover:text-stone-800 shadow-sm"><i data-lucide="pencil" class="w-4 h-4"></i></button><button onclick="deleteItinerary('${item.id}')" class="p-2 bg-white border border-stone-100 rounded-full text-stone-400 hover:text-red-500 shadow-sm"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div></div>`;
-                list.appendChild(div);
+        // --- SHOPPING ---
+        function handleShopImg(e) {
+            const f = e.target.files[0];
+            if(f) {
+                const r = new FileReader();
+                r.onload = function(evt) {
+                    tempShopImg = evt.target.result;
+                    document.getElementById('shop-img-preview').src = tempShopImg;
+                    document.getElementById('shop-img-preview').classList.remove('hidden');
+                    document.getElementById('shop-img-placeholder').classList.add('hidden');
+                };
+                r.readAsDataURL(f);
+            }
+        }
+        async function addShopItem() {
+            const name = document.getElementById('shop-name').value;
+            const note = document.getElementById('shop-note').value;
+            if(!name) return alert('請輸入商品名稱');
+            const itemData = { name, note, img: tempShopImg || '', checked: false, created: Date.now() };
+            try {
+                if(db) await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('shopping').add(itemData);
+                else throw new Error();
+            } catch(e) {
+                shoppingData.unshift(itemData); renderShopping(); localStorage.setItem('osaka_shopping_2025', JSON.stringify(shoppingData));
+            }
+            // Reset UI
+            document.getElementById('shop-name').value = '';
+            document.getElementById('shop-note').value = '';
+            document.getElementById('shop-img-preview').src = '';
+            document.getElementById('shop-img-preview').classList.add('hidden');
+            document.getElementById('shop-img-placeholder').classList.remove('hidden');
+            tempShopImg = null;
+        }
+        async function deleteShop(id) {
+            if(!confirm('確認刪除？')) return;
+            try { if(db) await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('shopping').doc(id).delete(); else throw new Error(); } catch(e) {
+                shoppingData = shoppingData.filter(i => i.id !== id); renderShopping(); localStorage.setItem('osaka_shopping_2025', JSON.stringify(shoppingData));
+            }
+        }
+        function renderShopping() {
+            const l = document.getElementById('shopping-list');
+            l.innerHTML = '';
+            shoppingData.forEach(i => {
+                const d = document.createElement('div');
+                d.className = 'bg-white rounded-xl shadow-sm border border-stone-200 overflow-hidden relative group';
+                d.innerHTML = `
+                    <div class="h-32 w-full bg-stone-100 flex items-center justify-center overflow-hidden">
+                        ${i.img ? `<img src="${i.img}" class="w-full h-full object-cover">` : `<i data-lucide="image" class="w-8 h-8 text-stone-300"></i>`}
+                    </div>
+                    <div class="p-3">
+                        <div class="font-bold text-stone-800 text-sm truncate">${i.name}</div>
+                        <div class="text-xs text-stone-400 mt-1 truncate">${i.note || '無備註'}</div>
+                    </div>
+                    <button onclick="deleteShop('${i.id}')" class="absolute top-2 right-2 bg-black/50 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"><i data-lucide="x" class="w-3 h-3"></i></button>
+                `;
+                l.appendChild(d);
             });
-            const mapItems = dayItems.filter(i => i.lat && i.lng);
-            const mapContainer = document.createElement('div');
-            mapContainer.className = "mt-6 overflow-hidden rounded-2xl shadow-md border border-stone-200 bg-white";
-            mapContainer.innerHTML = `<div class="h-64 w-full relative z-0" id="map-wrap-${currentDayIndex}"></div><div class="p-3 bg-white text-center border-t border-stone-100"><a href="#" id="google-maps-btn" target="_blank" class="block w-full py-2 bg-blue-50 text-blue-600 rounded-lg text-xs font-bold hover:bg-blue-100 transition-colors"><i data-lucide="external-link" class="w-3 h-3 inline mr-1"></i> 開啟 Google Maps 導航</a></div>`;
-            list.appendChild(mapContainer);
-            setTimeout(() => {
-                const mid = `map-wrap-${currentDayIndex}`;
-                if(document.getElementById(mid)) {
-                    if(mapInstance) { mapInstance.remove(); mapInstance=null; }
-                    const center = mapItems.length > 0 ? [mapItems[0].lat, mapItems[0].lng] : [34.6937, 135.5023];
-                    mapInstance = L.map(mid).setView(center, 13);
-                    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {attribution:'&copy; OSM',maxZoom:19}).addTo(mapInstance);
-                    const bounds = [];
-                    mapItems.forEach(i => { L.marker([i.lat,i.lng]).addTo(mapInstance).bindPopup(i.title); bounds.push([i.lat,i.lng]); });
-                    if(bounds.length>1) mapInstance.fitBounds(bounds, {padding:[50,50]});
-                    const q = mapItems.map(i=>i.title).join('/');
-                    document.getElementById('google-maps-btn').href = mapItems.length ? `https://www.google.com/maps/dir/${q}` : `https://www.google.com/maps/search/Osaka`;
-                }
-            }, 100);
             lucide.createIcons();
         }
 
-        // Other Sync Actions
-        async function addLuggageItem(){const v=document.getElementById('new-luggage-item').value;if(!v)return; try{if(db) await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('luggage').add({text:v,checked:false,created:Date.now()}); else throw new Error();}catch(e){luggageData.push({id:Date.now().toString(),text:v,checked:false});renderLuggage();localStorage.setItem('osaka_luggage_2025_v2',JSON.stringify(luggageData));} document.getElementById('new-luggage-item').value='';}
-        async function toggleLuggage(id, old){try{if(db) await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('luggage').doc(id).update({checked:!old}); else throw new Error();}catch(e){luggageData=luggageData.map(i=>i.id===id?{...i,checked:!old}:i);renderLuggage();localStorage.setItem('osaka_luggage_2025_v2',JSON.stringify(luggageData));}}
-        async function deleteLuggage(id){try{if(db) await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('luggage').doc(id).delete(); else throw new Error();}catch(e){luggageData=luggageData.filter(i=>i.id!==id);renderLuggage();localStorage.setItem('osaka_luggage_2025_v2',JSON.stringify(luggageData));}}
-        function renderLuggage(){const c=document.getElementById('luggage-list');c.innerHTML='';const done=luggageData.filter(i=>i.checked).length;document.getElementById('luggage-count').innerText=`${done}/${luggageData.length}`;document.getElementById('progress-bar').style.width=luggageData.length?(done/luggageData.length)*100+'%':'0%';luggageData.forEach(i=>{const el=document.createElement('div');el.className='flex items-center justify-between p-3 bg-white border border-stone-200 rounded-lg group hover:shadow-sm transition-all';el.innerHTML=`<label class="flex items-center flex-1 cursor-pointer select-none"><input type="checkbox" class="w-5 h-5 rounded border-stone-300 text-stone-800 focus:ring-stone-500 mr-3" ${i.checked?'checked':''} onchange="toggleLuggage('${i.id}', ${i.checked})"><span class="${i.checked?'line-through text-stone-300':'text-stone-700'} text-sm font-medium transition-colors">${i.text}</span></label><button onclick="deleteLuggage('${i.id}')" class="opacity-0 group-hover:opacity-100 text-stone-300 hover:text-red-400 transition-all px-2"><i data-lucide="x" class="w-4 h-4"></i></button>`;c.appendChild(el);});lucide.createIcons();}
+        // --- LUGGAGE ---
+        async function addLuggageItem(){const v=document.getElementById('new-luggage-item').value;if(!v)return;try{if(db)await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('luggage').add({text:v,checked:false,created:Date.now()});else throw new Error();}catch(e){luggageData.push({id:Date.now(),text:v,checked:false});renderLuggage();localStorage.setItem('osaka_luggage_2025_v2',JSON.stringify(luggageData));}document.getElementById('new-luggage-item').value='';}
+        async function toggleLuggage(id,old){try{if(db)await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('luggage').doc(id).update({checked:!old});else throw new Error();}catch(e){luggageData=luggageData.map(i=>i.id===id?{...i,checked:!old}:i);renderLuggage();localStorage.setItem('osaka_luggage_2025_v2',JSON.stringify(luggageData));}}
+        async function deleteLuggage(id){try{if(db)await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('luggage').doc(id).delete();else throw new Error();}catch(e){luggageData=luggageData.filter(i=>i.id!==id);renderLuggage();localStorage.setItem('osaka_luggage_2025_v2',JSON.stringify(luggageData));}}
+        function renderLuggage(){const c=document.getElementById('luggage-list');c.innerHTML='';const d=luggageData.filter(i=>i.checked).length;document.getElementById('luggage-count').innerText=`${d}/${luggageData.length}`;document.getElementById('progress-bar').style.width=luggageData.length?(d/luggageData.length)*100+'%':'0%';luggageData.forEach(i=>{const el=document.createElement('div');el.className='flex items-center justify-between p-3 bg-white border border-stone-200 rounded-lg group hover:shadow-sm transition-all';el.innerHTML=`<label class="flex items-center flex-1 cursor-pointer select-none"><input type="checkbox" class="w-5 h-5 rounded border-stone-300 text-stone-800 focus:ring-stone-500 mr-3" ${i.checked?'checked':''} onchange="toggleLuggage('${i.id}',${i.checked})"><span class="${i.checked?'line-through text-stone-300':'text-stone-700'} text-sm font-medium transition-colors">${i.text}</span></label><button onclick="deleteLuggage('${i.id}')" class="opacity-0 group-hover:opacity-100 text-stone-300 hover:text-red-400 transition-all px-2"><i data-lucide="x" class="w-4 h-4"></i></button>`;c.appendChild(el);});lucide.createIcons();}
 
+        // --- EXPENSES ---
         let showTWD=false;
         function calculateExchange(){document.getElementById('twd-output').innerText=Math.round((parseFloat(document.getElementById('jpy-input').value)||0)*0.215).toLocaleString();}
-        async function addExpense(){const n=document.getElementById('expense-note').value;const a=parseInt(document.getElementById('expense-amt').value);if(!n||isNaN(a))return;try{if(db) await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('expenses').add({note:n,amt:a,created:Date.now()}); else throw new Error();}catch(e){expenses.unshift({id:Date.now().toString(),note:n,amt:a});renderExpenses();localStorage.setItem('osaka_expenses_2025',JSON.stringify(expenses));} document.getElementById('expense-note').value='';document.getElementById('expense-amt').value='';}
-        async function deleteExpense(id){try{if(db) await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('expenses').doc(id).delete(); else throw new Error();}catch(e){expenses=expenses.filter(e=>e.id!==id);renderExpenses();localStorage.setItem('osaka_expenses_2025',JSON.stringify(expenses));}}
-        function renderExpenses(){const c=document.getElementById('expense-list');c.innerHTML='';let t=0;expenses.forEach(e=>{t+=e.amt;const d=document.createElement('div');d.className='flex justify-between items-center py-3 border-b border-stone-100 last:border-0';d.innerHTML=`<div class="flex items-center"><button onclick="deleteExpense('${e.id}')" class="mr-3 text-stone-200 hover:text-red-400"><i data-lucide="minus-circle" class="w-4 h-4"></i></button><span class="text-sm text-stone-700 font-medium">${e.note}</span></div><span class="font-mono text-stone-600 font-bold tracking-tight">¥${e.amt.toLocaleString()}</span>`;c.appendChild(d);});const tel=document.getElementById('total-expense');tel.innerText=showTWD?`NT$ ${Math.round(t*0.215).toLocaleString()}`:`¥ ${t.toLocaleString()}`;lucide.createIcons();}
-        function toggleTotalCurrency(){showTWD=!showTWD;renderExpenses();}
+        async function addExpense(){
+            const n=document.getElementById('expense-note').value;
+            const a=parseInt(document.getElementById('expense-amt').value);
+            const cat=document.getElementById('expense-cat').value;
+            if(!n||isNaN(a))return;
+            try{if(db)await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('expenses').add({note:n,amt:a,cat,created:Date.now()});else throw new Error();}catch(e){expenses.unshift({id:Date.now(),note:n,amt:a,cat});renderExpenses();localStorage.setItem('osaka_expenses_2025',JSON.stringify(expenses));}
+            document.getElementById('expense-note').value='';document.getElementById('expense-amt').value='';
+        }
+        async function deleteExpense(id){try{if(db)await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('expenses').doc(id).delete();else throw new Error();}catch(e){expenses=expenses.filter(e=>e.id!==id);renderExpenses();localStorage.setItem('osaka_expenses_2025',JSON.stringify(expenses));}}
+        function renderExpenses(){
+            const c=document.getElementById('expense-list');c.innerHTML='';let t=0;
+            // Cats totals
+            let cats = {food:0, shop:0, trans:0, other:0};
+            expenses.forEach(e=>{
+                t+=e.amt;
+                if(e.cat) cats[e.cat] += e.amt; else cats.other += e.amt;
+                let catIcon = e.cat==='food'?'utensils':e.cat==='shop'?'shopping-bag':e.cat==='trans'?'bus':'circle-dollar-sign';
+                const d=document.createElement('div');
+                d.className='flex justify-between items-center py-3 border-b border-stone-100 last:border-0';
+                d.innerHTML=`<div class="flex items-center"><button onclick="deleteExpense('${e.id}')" class="mr-3 text-stone-200 hover:text-red-400"><i data-lucide="minus-circle" class="w-4 h-4"></i></button><div class="mr-3 p-1.5 bg-stone-50 rounded text-stone-400"><i data-lucide="${catIcon}" class="w-3 h-3"></i></div><span class="text-sm text-stone-700 font-medium">${e.note}</span></div><span class="font-mono text-stone-600 font-bold tracking-tight">¥${e.amt.toLocaleString()}</span>`;
+                c.appendChild(d);
+            });
+            const tel=document.getElementById('total-expense');
+            tel.innerText=showTWD?`NT$ ${Math.round(t*0.215).toLocaleString()}`:`¥ ${t.toLocaleString()}`;
+            
+            // Chart Render
+            const chart = document.getElementById('expense-chart');
+            const legend = document.getElementById('expense-legend');
+            if(t>0) {
+                chart.innerHTML = `
+                    <div style="width:${(cats.food/t)*100}%" class="h-full bg-amber-400"></div>
+                    <div style="width:${(cats.shop/t)*100}%" class="h-full bg-blue-400"></div>
+                    <div style="width:${(cats.trans/t)*100}%" class="h-full bg-emerald-400"></div>
+                    <div style="width:${(cats.other/t)*100}%" class="h-full bg-stone-300"></div>
+                `;
+                legend.innerHTML = `
+                    <span class="flex items-center text-amber-600"><div class="w-2 h-2 rounded-full bg-amber-400 mr-1"></div>食 ${Math.round((cats.food/t)*100)}%</span>
+                    <span class="flex items-center text-blue-600"><div class="w-2 h-2 rounded-full bg-blue-400 mr-1"></div>購 ${Math.round((cats.shop/t)*100)}%</span>
+                    <span class="flex items-center text-emerald-600"><div class="w-2 h-2 rounded-full bg-emerald-400 mr-1"></div>行 ${Math.round((cats.trans/t)*100)}%</span>
+                    <span class="flex items-center text-stone-500"><div class="w-2 h-2 rounded-full bg-stone-300 mr-1"></div>他 ${Math.round((cats.other/t)*100)}%</span>
+                `;
+            } else { chart.innerHTML=''; legend.innerHTML=''; }
 
-        async function addInfoNote(){const v=document.getElementById('new-note-input').value;if(!v)return;try{if(db) await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('notes').add({text:v,created:Date.now()}); else throw new Error();}catch(e){infoNotes.push({id:Date.now().toString(),text:v});renderInfoNotes();localStorage.setItem('osaka_notes_2025',JSON.stringify(infoNotes));} document.getElementById('new-note-input').value='';}
-        async function deleteInfoNote(id){try{if(db) await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('notes').doc(id).delete(); else throw new Error();}catch(e){infoNotes=infoNotes.filter(n=>n.id!==id);renderInfoNotes();localStorage.setItem('osaka_notes_2025',JSON.stringify(infoNotes));}}
+            lucide.createIcons();
+        }
+        function toggleTotalCurrency(){showTWD=!showTWD;renderExpenses();}
+        
+        // --- NOTES ---
+        async function addInfoNote(){const v=document.getElementById('new-note-input').value;if(!v)return;try{if(db)await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('notes').add({text:v,created:Date.now()});else throw new Error();}catch(e){infoNotes.push({id:Date.now(),text:v});renderInfoNotes();localStorage.setItem('osaka_notes_2025',JSON.stringify(infoNotes));}document.getElementById('new-note-input').value='';}
+        async function deleteInfoNote(id){try{if(db)await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('notes').doc(id).delete();else throw new Error();}catch(e){infoNotes=infoNotes.filter(n=>n.id!==id);renderInfoNotes();localStorage.setItem('osaka_notes_2025',JSON.stringify(infoNotes));}}
         function renderInfoNotes(){const l=document.getElementById('info-notes-list');l.innerHTML='';infoNotes.forEach(note=>{const d=document.createElement('div');d.className='flex justify-between items-center p-3 bg-stone-50 rounded-lg text-sm border border-stone-100 group';d.innerHTML=`<span class="text-stone-700">${note.text}</span><button onclick="deleteInfoNote('${note.id}')" class="text-stone-300 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"><i data-lucide="x" class="w-4 h-4"></i></button>`;l.appendChild(d);});lucide.createIcons();}
 
-        // UI Helpers
-        function initDateTabs() {const container = document.getElementById('date-tabs');const select = document.getElementById('new-day');for(let i=0; i<TOTAL_DAYS; i++) {const date = new Date(TRIP_START); date.setDate(TRIP_START.getDate() + i);const month = date.getMonth() + 1; const day = date.getDate(); const week = WEEKDAYS[date.getDay()];const btn = document.createElement('button');btn.className = `date-tab flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-bold border transition-all ${i===0?'bg-stone-800 text-white border-stone-800':'bg-white text-stone-400 border-stone-200'}`;btn.innerText = `Day ${i+1} (${week})`;btn.onclick = () => setDay(i);container.appendChild(btn);const opt = document.createElement('option'); opt.value = i; opt.text = `Day ${i+1} - ${month}/${day} (${week})`; select.appendChild(opt);}updateHeaderImage(0);}
-        function setDay(index) {currentDayIndex = index;document.querySelectorAll('.date-tab').forEach((t, i) => {t.className = i === index ? 'date-tab flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-bold border transition-all bg-stone-800 text-white border-stone-800 shadow-md' : 'date-tab flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-bold border transition-all bg-white text-stone-400 border-stone-200';});document.getElementById('header-day-num').innerText = index + 1;updateHeaderImage(index);updateWeatherHighlight(index);renderItineraryList();}
-        function handleHeaderUpload(e) {const file = e.target.files[0];if(file) {const reader = new FileReader();reader.onload = function(evt) {userHeaderImage = evt.target.result;localStorage.setItem('osaka_header_img', userHeaderImage);document.getElementById('daily-scenic-img').src = userHeaderImage;}
-        reader.readAsDataURL(file);}}
-        function updateHeaderImage(index) {const img = document.getElementById('daily-scenic-img');img.style.opacity = '0';setTimeout(() => {img.src = userHeaderImage || SCENIC_IMAGES[index % SCENIC_IMAGES.length];img.onload = () => img.style.opacity = '1';}, 300);}
-        function initWeather(){const c=document.getElementById('weather-strip');WEATHER_DATA.forEach((w,i)=>{const d=new Date(TRIP_START);d.setDate(TRIP_START.getDate()+i);const isToday=i===currentDayIndex;const el=document.createElement('div');el.className=`weather-card flex flex-col items-center justify-center p-2 rounded-lg min-w-[70px] border transition-all cursor-pointer ${isToday?'bg-white border-stone-300 shadow-sm':'bg-transparent border-transparent opacity-60'}`;el.onclick=()=>setDay(i);el.innerHTML=`<span class="text-[10px] font-bold text-stone-400 mb-1">${d.getMonth()+1}/${d.getDate()}</span><span class="text-xl mb-1">${w.icon}</span><span class="text-[10px] font-bold text-stone-600">${w.temp}</span>`;c.appendChild(el);});}
-        function updateWeatherHighlight(idx){document.querySelectorAll('.weather-card').forEach((el,i)=>{if(i===idx){el.classList.add('bg-white','border-stone-300','shadow-sm','scale-105');el.classList.remove('bg-transparent','border-transparent','opacity-60');}else{el.classList.remove('bg-white','border-stone-300','shadow-sm','scale-105');el.classList.add('bg-transparent','border-transparent','opacity-60');}});}
-        function openAddModal(){document.getElementById('add-modal').classList.remove('hidden');document.getElementById('new-day').value=currentDayIndex;document.getElementById('modal-title').innerText="新增行程";document.getElementById('modal-btn-text').innerText="確認新增";document.getElementById('edit-id').value="";document.getElementById('new-title').value="";document.getElementById('new-location').value="";document.getElementById('new-time').value="";}
-        function openEditModal(id){const item=itineraryData.find(i=>i.id===id);if(!item)return;document.getElementById('add-modal').classList.remove('hidden');document.getElementById('modal-title').innerText="修改行程";document.getElementById('modal-btn-text').innerText="儲存修改";document.getElementById('edit-id').value=id;document.getElementById('new-title').value=item.title;document.getElementById('new-location').value=item.location||"";document.getElementById('new-time').value=item.time;document.getElementById('new-day').value=item.day;const radios=document.getElementsByName('new-type');for(let r of radios){if(r.value===item.type)r.checked=true;}}
-        function closeAddModal(){document.getElementById('add-modal').classList.add('hidden');}
-        function openZoomCard(t,j,r){document.getElementById('zoom-modal').classList.remove('hidden');document.getElementById('zoom-modal').classList.add('flex');document.getElementById('zoom-title').innerText=t;document.getElementById('zoom-jp').innerHTML=j;document.getElementById('zoom-ro').innerText=r;}
-        function closeZoomCard(){document.getElementById('zoom-modal').classList.add('hidden');document.getElementById('zoom-modal').classList.remove('flex');}
-        function handleMapUpload(e){const f=e.target.files[0];if(f){const r=new FileReader();r.onload=function(evt){document.getElementById('user-map-img').src=evt.target.result;};r.readAsDataURL(f);}}
+        function initDateTabs(){const c=document.getElementById('date-tabs');const s=document.getElementById('new-day');for(let i=0;i<TOTAL_DAYS;i++){const d=new Date(TRIP_START);d.setDate(TRIP_START.getDate()+i);const m=d.getMonth()+1;const day=d.getDate();const w=WEEKDAYS[d.getDay()];const b=document.createElement('button');b.className=`date-tab flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-bold border transition-all ${i===0?'bg-stone-800 text-white border-stone-800':'bg-white text-stone-400 border-stone-200'}`;b.innerText=`Day ${i+1} (${w})`;b.onclick=()=>setDay(i);c.appendChild(b);const o=document.createElement('option');o.value=i;o.text=`Day ${i+1} - ${m}/${day} (${w})`;s.appendChild(o);}updateHeaderImage(0);}
+        function setDay(i){currentDayIndex=i;document.querySelectorAll('.date-tab').forEach((t,idx)=>{t.className=idx===i?'date-tab flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-bold border transition-all bg-stone-800 text-white border-stone-800 shadow-md':'date-tab flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-bold border transition-all bg-white text-stone-400 border-stone-200'});document.getElementById('header-day-num').innerText=i+1;updateHeaderImage(i);updateWeatherHighlight(i);renderItineraryList();}
+        function handleHeaderUpload(e){const f=e.target.files[0];if(f){const r=new FileReader();r.onload=function(evt){userHeaderImage=evt.target.result;localStorage.setItem('osaka_header_img',userHeaderImage);document.getElementById('daily-scenic-img').src=userHeaderImage;};r.readAsDataURL(f);}}
     </script>
 </body>
 </html>
