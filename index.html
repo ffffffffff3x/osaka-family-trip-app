@@ -2,32 +2,29 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <!-- 加上 viewport-fit=cover 讓 iPhone 全螢幕時避開劉海 -->
+    <!-- 讓 iPhone 全螢幕時避開劉海 -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>OSAKA Family Trip 2025</title>
     
-    <!-- iOS Web App 設定 (讓網頁變 App 的關鍵) -->
+    <!-- iOS Web App 設定 -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Osaka 2025">
-    <!-- Android Theme Color -->
     <meta name="theme-color" content="#F5F5F4">
 
-    <!-- App Icon 設定 (使用 Wikimedia 穩定圖源，並加上版本號 v=5 強制刷新) -->
+    <!-- App Icon (使用 Wikimedia 穩定圖源 + ?v=5 強制刷新) -->
     <link rel="apple-touch-icon" sizes="180x180" href="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Ginkgo_biloba_leaf_stylized.svg/512px-Ginkgo_biloba_leaf_stylized.svg.png?v=5">
     <link rel="icon" type="image/png" href="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Ginkgo_biloba_leaf_stylized.svg/512px-Ginkgo_biloba_leaf_stylized.svg.png?v=5">
     <link rel="shortcut icon" href="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Ginkgo_biloba_leaf_stylized.svg/512px-Ginkgo_biloba_leaf_stylized.svg.png?v=5">
 
-    <!-- Tailwind CSS -->
+    <!-- Tailwind CSS & Icons -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 
-    <!-- Google Fonts -->
+    <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Noto+Serif+JP:wght@700&display=swap" rel="stylesheet">
 
-    <!-- Leaflet CSS (地圖) -->
+    <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     
     <!-- Firebase SDKs -->
@@ -38,68 +35,38 @@
     <style>
         body {
             font-family: 'Noto Sans TC', sans-serif;
-            background-color: #F5F5F4; /* Stone-100 極簡灰底 */
-            -webkit-tap-highlight-color: transparent;
-            color: #44403c; /* Stone-700 */
-            /* iOS Safe Area Support */
+            background-color: #F5F5F4;
+            color: #44403c;
+            /* iOS Safe Area */
             padding-top: env(safe-area-inset-top);
             padding-bottom: env(safe-area-inset-bottom);
+            -webkit-tap-highlight-color: transparent;
         }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        
-        .page {
-            display: none;
-            opacity: 0;
-            transition: opacity 0.3s ease-in-out;
-            padding-bottom: 110px;
-        }
+        .page { display: none; padding-bottom: 110px; opacity: 0; transition: opacity 0.3s; }
         .page.active { display: block; opacity: 1; }
-
-        /* Splash Animation */
-        #splash-screen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #fff; z-index: 9999;
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-            transition: opacity 0.8s ease-out;
-        }
-
-        .nav-item.active { color: #292524; } /* Stone-800 */
-        .nav-item.active svg { stroke-width: 2.5px; }
-
+        
+        /* Splash */
+        #splash-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.8s; }
+        
         .serif-title { font-family: 'Noto Serif JP', serif; }
-
+        .nav-item.active { color: #292524; }
+        .nav-item.active svg { stroke-width: 2.5px; }
+        
         /* Cards */
-        .driver-card {
-            background: linear-gradient(135deg, #292524 0%, #44403c 100%);
-            color: white;
-        }
-
-        .jp-card {
-            transition: transform 0.1s, background-color 0.2s;
-        }
-        .jp-card:active {
-            transform: scale(0.95);
-            background-color: #e7e5e4;
-        }
-
-        /* Modal & Maps */
+        .driver-card { background: linear-gradient(135deg, #292524 0%, #44403c 100%); color: white; }
+        .jp-card:active { transform: scale(0.95); background-color: #e7e5e4; transition: 0.1s; }
+        
+        /* Map */
         #zoom-modal { backdrop-filter: blur(8px); }
         .leaflet-pane { z-index: 1 !important; }
         .leaflet-control { z-index: 2 !important; }
-        
-        /* Map Card Background Placeholder */
-        .map-card-bg {
-            background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Osaka_Metro_Route_Map_%28Schema%29.svg/1024px-Osaka_Metro_Route_Map_%28Schema%29.svg.png');
-            background-size: cover;
-            background-position: center;
-            opacity: 0.5;
-        }
     </style>
 </head>
 <body class="antialiased h-screen overflow-hidden">
 
-    <!-- 1. 啟動頁 -->
+    <!-- Splash -->
     <div id="splash-screen">
         <div class="text-center animate-pulse px-6">
             <h1 class="text-4xl font-bold tracking-widest text-stone-800 mb-2 serif-title">OSAKA</h1>
@@ -109,55 +76,44 @@
         </div>
     </div>
 
-    <!-- 2. 行程主頁 -->
+    <!-- Page: Flight (Itinerary) -->
     <div id="page-flight" class="page h-full overflow-y-auto no-scrollbar">
-        <!-- Header (可換圖) -->
+        <!-- Header -->
         <div class="relative h-60 w-full overflow-hidden z-10 group">
             <img id="daily-scenic-img" src="" class="w-full h-full object-cover transition-opacity duration-700">
             <div class="absolute inset-0 bg-gradient-to-t from-stone-900/70 to-transparent"></div>
-            
             <div class="absolute bottom-6 left-6 text-white">
                 <div class="flex items-center gap-2 mb-2 opacity-90">
                     <span class="bg-white/20 px-2 py-0.5 rounded text-[10px] font-bold backdrop-blur-sm tracking-wider uppercase">Day <span id="header-day-num">1</span></span>
                 </div>
                 <h1 class="text-3xl font-bold serif-title tracking-wide">OSAKA Family Trip</h1>
             </div>
-
-            <!-- 更換封面按鈕 -->
             <label class="absolute bottom-6 right-6 bg-black/30 hover:bg-black/50 text-white p-2 rounded-full cursor-pointer backdrop-blur-md transition-colors">
                 <input type="file" accept="image/*" class="hidden" onchange="handleHeaderUpload(event)">
                 <i data-lucide="camera" class="w-5 h-5"></i>
             </label>
         </div>
 
-        <!-- 日期導航 -->
+        <!-- Date Tabs -->
         <div class="sticky top-0 bg-[#F5F5F4]/95 backdrop-blur z-30 border-b border-stone-200 shadow-sm mt-[-20px] pt-6 rounded-t-3xl">
             <div class="flex items-center justify-between pl-2 pr-4 py-2">
-                <div class="flex overflow-x-auto no-scrollbar space-x-2 py-1 flex-1" id="date-tabs">
-                    <!-- Javascript Injected -->
-                </div>
+                <div class="flex overflow-x-auto no-scrollbar space-x-2 py-1 flex-1" id="date-tabs"></div>
                 <button onclick="openAddModal()" class="flex-shrink-0 ml-2 bg-stone-800 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-md active:bg-black flex items-center transition-colors">
                     <i data-lucide="plus" class="w-3.5 h-3.5 mr-1"></i> 新增
                 </button>
             </div>
         </div>
 
-        <!-- 天氣預報條 -->
+        <!-- Weather -->
         <div class="py-3 overflow-x-auto no-scrollbar">
-            <div class="flex px-4 space-x-3 min-w-max" id="weather-strip">
-                <!-- JS Injected Weather Cards -->
-            </div>
+            <div class="flex px-4 space-x-3 min-w-max" id="weather-strip"></div>
         </div>
 
-        <!-- 行程列表 -->
-        <div id="itinerary-list" class="p-4 space-y-3 pb-24 min-h-[300px]">
-            <div class="text-center py-10 text-stone-300">
-                <i data-lucide="loader-2" class="w-6 h-6 mx-auto animate-spin"></i>
-            </div>
-        </div>
+        <!-- List -->
+        <div id="itinerary-list" class="p-4 space-y-3 pb-24 min-h-[300px]"></div>
     </div>
 
-    <!-- 3. 行李清單 -->
+    <!-- Page: Luggage -->
     <div id="page-luggage" class="page h-full overflow-y-auto no-scrollbar">
         <div class="sticky top-0 bg-[#F5F5F4]/95 backdrop-blur z-20 border-b border-stone-200 px-5 py-4">
             <div class="flex justify-between items-center">
@@ -168,20 +124,19 @@
                 <div id="progress-bar" class="bg-stone-800 h-full w-0 transition-all duration-500"></div>
             </div>
             <div class="mt-4 flex gap-2">
-                <input type="text" id="new-luggage-item" placeholder="新增物品..." class="flex-1 bg-white border border-stone-200 rounded-lg px-4 py-2 text-sm outline-none focus:border-stone-400 transition-colors">
-                <button onclick="addLuggageItem()" class="bg-stone-800 text-white px-4 rounded-lg text-sm font-bold shadow-sm active:scale-95 transition-transform">新增</button>
+                <input type="text" id="new-luggage-item" placeholder="新增物品..." class="flex-1 bg-white border border-stone-200 rounded-lg px-4 py-2 text-sm outline-none focus:border-stone-400">
+                <button onclick="addLuggageItem()" class="bg-stone-800 text-white px-4 rounded-lg text-sm font-bold shadow-sm">新增</button>
             </div>
         </div>
         <div class="p-5 space-y-2" id="luggage-list"></div>
     </div>
 
-    <!-- 4. 記帳 -->
+    <!-- Page: Money -->
     <div id="page-money" class="page h-full overflow-y-auto no-scrollbar">
         <div class="sticky top-0 bg-[#F5F5F4]/95 backdrop-blur z-20 border-b border-stone-200 px-5 py-4">
              <h2 class="text-xl font-bold text-stone-800 serif-title">換匯 & 記帳</h2>
         </div>
         <div class="p-5">
-            <!-- 獨立計算機 -->
             <div class="bg-stone-800 text-white rounded-2xl p-6 shadow-xl mb-8 relative overflow-hidden">
                 <div class="flex justify-between items-center mb-6 relative z-10">
                      <span class="text-[10px] font-bold tracking-[0.2em] text-stone-400">EXCHANGE</span>
@@ -196,14 +151,12 @@
                     <span class="text-4xl font-mono font-bold text-emerald-400" id="twd-output">0</span>
                 </div>
             </div>
-
-            <!-- 記帳 -->
             <div class="bg-white p-4 rounded-xl border border-stone-200 shadow-sm mb-6">
                  <div class="flex gap-2 mb-3">
-                     <input type="text" id="expense-note" placeholder="項目 (例: 章魚燒)" class="flex-1 bg-stone-50 border-none rounded-lg px-3 py-2.5 text-sm outline-none">
+                     <input type="text" id="expense-note" placeholder="項目" class="flex-1 bg-stone-50 border-none rounded-lg px-3 py-2.5 text-sm outline-none">
                      <input type="number" id="expense-amt" placeholder="日幣" class="w-24 bg-stone-50 border-none rounded-lg px-3 py-2.5 text-sm outline-none">
                  </div>
-                 <button onclick="addExpense()" class="w-full bg-stone-100 text-stone-700 py-3 rounded-lg text-sm font-bold hover:bg-stone-200 transition-colors flex items-center justify-center">
+                 <button onclick="addExpense()" class="w-full bg-stone-100 text-stone-700 py-3 rounded-lg text-sm font-bold hover:bg-stone-200 flex items-center justify-center">
                     <i data-lucide="plus-circle" class="w-4 h-4 mr-2"></i> 加入記帳
                  </button>
             </div>
@@ -218,279 +171,89 @@
         </div>
     </div>
 
-    <!-- 5. 資訊 -->
+    <!-- Page: Info -->
     <div id="page-info" class="page h-full overflow-y-auto no-scrollbar bg-stone-50">
         <div class="sticky top-0 bg-[#F5F5F4]/95 backdrop-blur z-20 border-b border-stone-200 px-5 py-4">
             <h2 class="text-xl font-bold text-stone-800 serif-title">旅程資訊卡</h2>
         </div>
-
         <div class="p-5 space-y-6">
-            <!-- 手指卡 -->
-            <div>
-                <h3 class="text-xs font-bold text-stone-400 uppercase tracking-wider mb-3 ml-1 flex items-center">
-                    <i data-lucide="hand-pointing-right" class="w-3 h-3 mr-1"></i> 實用日語手指卡 (禮貌版)
-                </h3>
-                <div class="grid grid-cols-2 gap-3">
-                    <div onclick="openZoomCard('結帳', 'お会計をお願いします', 'O-kai-kei o o-ne-gai shi-masu')" class="bg-white p-4 rounded-xl border border-stone-200 jp-card cursor-pointer shadow-sm">
-                        <div class="text-xs text-stone-400 mb-1">麻煩請結帳</div>
-                        <div class="font-bold text-stone-800 text-lg serif-title">お会計...</div>
-                    </div>
-                    <div onclick="openZoomCard('洗手間', 'お手洗いはどこですか？', 'O-te-a-rai wa do-ko de-su-ka')" class="bg-white p-4 rounded-xl border border-stone-200 jp-card cursor-pointer shadow-sm">
-                        <div class="text-xs text-stone-400 mb-1">請問廁所在哪</div>
-                        <div class="font-bold text-stone-800 text-lg serif-title">お手洗いは...</div>
-                    </div>
-                    <div onclick="openZoomCard('水', 'お水をいただけますか？', 'O-mi-zu o i-ta-da-ke-ma-su-ka')" class="bg-white p-4 rounded-xl border border-stone-200 jp-card cursor-pointer shadow-sm">
-                        <div class="text-xs text-stone-400 mb-1">請給我水</div>
-                        <div class="font-bold text-stone-800 text-lg serif-title">お水を...</div>
-                    </div>
-                    <div onclick="openZoomCard('去冰', '氷なしでお願いします', 'Ko-ori na-shi de o-ne-gai shi-ma-su')" class="bg-white p-4 rounded-xl border border-stone-200 jp-card cursor-pointer shadow-sm">
-                        <div class="text-xs text-stone-400 mb-1">去冰 (給小孩)</div>
-                        <div class="font-bold text-stone-800 text-lg serif-title">氷なしで...</div>
-                    </div>
-                    <!-- 無酒精 -->
-                    <div onclick="openZoomCard('無酒精請求', '子供が食べるので、<br>お酒が入っていない料理を<br>お願いできますか？', 'No Alcohol for kids')" class="col-span-2 bg-orange-50 p-4 rounded-xl border border-orange-100 jp-card cursor-pointer shadow-sm flex items-center justify-between">
-                        <div>
-                            <div class="text-xs text-orange-400 mb-1 font-bold">給小孩吃的 (無酒精)</div>
-                            <div class="font-bold text-stone-800 text-lg serif-title">お酒が入っていない...</div>
-                        </div>
-                        <i data-lucide="ban" class="w-6 h-6 text-orange-300"></i>
-                    </div>
-                </div>
+            <!-- Cards -->
+            <div class="grid grid-cols-2 gap-3">
+                <div onclick="openZoomCard('結帳', 'お会計をお願いします', 'O-kai-kei o o-ne-gai shi-masu')" class="bg-white p-4 rounded-xl border border-stone-200 jp-card cursor-pointer shadow-sm"><div class="text-xs text-stone-400 mb-1">麻煩請結帳</div><div class="font-bold text-stone-800 text-lg serif-title">お会計...</div></div>
+                <div onclick="openZoomCard('洗手間', 'お手洗いはどこですか？', 'O-te-a-rai wa do-ko de-su-ka')" class="bg-white p-4 rounded-xl border border-stone-200 jp-card cursor-pointer shadow-sm"><div class="text-xs text-stone-400 mb-1">請問廁所在哪</div><div class="font-bold text-stone-800 text-lg serif-title">お手洗いは...</div></div>
+                <div onclick="openZoomCard('水', 'お水をいただけますか？', 'O-mi-zu o i-ta-da-ke-ma-su-ka')" class="bg-white p-4 rounded-xl border border-stone-200 jp-card cursor-pointer shadow-sm"><div class="text-xs text-stone-400 mb-1">請給我水</div><div class="font-bold text-stone-800 text-lg serif-title">お水を...</div></div>
+                <div onclick="openZoomCard('去冰', '氷なしでお願いします', 'Ko-ori na-shi de o-ne-gai shi-ma-su')" class="bg-white p-4 rounded-xl border border-stone-200 jp-card cursor-pointer shadow-sm"><div class="text-xs text-stone-400 mb-1">去冰 (給小孩)</div><div class="font-bold text-stone-800 text-lg serif-title">氷なしで...</div></div>
+                <div onclick="openZoomCard('無酒精請求', '子供が食べるので、<br>お酒が入っていない料理を<br>お願いできますか？', 'No Alcohol for kids')" class="col-span-2 bg-orange-50 p-4 rounded-xl border border-orange-100 jp-card cursor-pointer shadow-sm flex items-center justify-between"><div><div class="text-xs text-orange-400 mb-1 font-bold">給小孩吃的 (無酒精)</div><div class="font-bold text-stone-800 text-lg serif-title">お酒が入っていない...</div></div><i data-lucide="ban" class="w-6 h-6 text-orange-300"></i></div>
             </div>
-
-            <!-- 地鐵圖 -->
+            
+            <!-- Map -->
             <div class="bg-white rounded-xl overflow-hidden shadow-sm border border-stone-200">
-                <div class="p-3 border-b border-stone-100 bg-stone-50 flex justify-between items-center">
-                    <h3 class="text-xs font-bold text-stone-600 uppercase tracking-wider flex items-center">
-                        <i data-lucide="map" class="w-4 h-4 mr-2"></i> Subway Map
-                    </h3>
-                    <label class="cursor-pointer bg-white border border-stone-200 px-2 py-1 rounded text-[10px] font-bold text-stone-500 hover:bg-stone-100 transition-colors">
-                        更換圖片
-                        <input type="file" id="map-upload" accept="image/*" class="hidden" onchange="handleMapUpload(event)">
-                    </label>
-                </div>
-                <div class="overflow-auto max-h-80 bg-stone-100 relative">
-                    <img id="user-map-img" src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Osaka_Metro_Route_Map_%28Schema%29.svg/1024px-Osaka_Metro_Route_Map_%28Schema%29.svg.png" class="w-full object-contain min-h-[200px]">
-                </div>
+                <div class="p-3 border-b border-stone-100 bg-stone-50 flex justify-between items-center"><h3 class="text-xs font-bold text-stone-600 uppercase tracking-wider flex items-center"><i data-lucide="map" class="w-4 h-4 mr-2"></i> Subway Map</h3><label class="cursor-pointer bg-white border border-stone-200 px-2 py-1 rounded text-[10px] font-bold text-stone-500 hover:bg-stone-100 transition-colors">更換圖片<input type="file" id="map-upload" accept="image/*" class="hidden" onchange="handleMapUpload(event)"></label></div>
+                <div class="overflow-auto max-h-80 bg-stone-100 relative"><img id="user-map-img" src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Osaka_Metro_Route_Map_%28Schema%29.svg/1024px-Osaka_Metro_Route_Map_%28Schema%29.svg.png" class="w-full object-contain min-h-[200px]"></div>
             </div>
 
-            <!-- 住宿溝通卡 -->
+            <!-- Hotel -->
             <div class="driver-card rounded-xl p-6 shadow-xl relative overflow-hidden group">
                 <div class="relative z-10">
-                    <div class="flex items-center mb-4">
-                        <span class="bg-white/20 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider text-white">Taxi Card</span>
-                    </div>
+                    <div class="flex items-center mb-4"><span class="bg-white/20 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider text-white">Taxi Card</span></div>
                     <h3 class="text-sm text-stone-300 mb-1">你好，請載我去這家飯店</h3>
                     <p class="text-xl font-bold serif-title mb-6 leading-relaxed">運転手さん、<br>このホテルまでお願いします。</p>
-                    
                     <div class="bg-white/10 p-4 rounded-lg backdrop-blur-sm border border-white/10">
                         <h4 class="font-bold text-lg text-white mb-1">Ostay Vermillion Kitahama</h4>
-                        <p class="text-sm text-stone-300 serif-title leading-relaxed">
-                            〒541-0041<br>
-                            大阪府大阪市中央区北浜 2-4-11
-                        </p>
+                        <p class="text-sm text-stone-300 serif-title leading-relaxed">〒541-0041 大阪府大阪市中央区北浜 2-4-11</p>
                     </div>
-                    <div class="mt-4 flex gap-3">
-                         <a href="https://goo.gl/maps/JuA5v7KaqMzoPAxD6" target="_blank" class="flex-1 bg-white text-stone-900 py-2.5 rounded-lg text-xs font-bold text-center flex items-center justify-center hover:bg-stone-200 transition-colors">
-                            <i data-lucide="map-pin" class="w-3 h-3 mr-1.5"></i> Google Maps
-                         </a>
-                    </div>
+                    <div class="mt-4 flex gap-3"><a href="https://goo.gl/maps/JuA5v7KaqMzoPAxD6" target="_blank" class="flex-1 bg-white text-stone-900 py-2.5 rounded-lg text-xs font-bold text-center flex items-center justify-center hover:bg-stone-200 transition-colors"><i data-lucide="map-pin" class="w-3 h-3 mr-1.5"></i> Google Maps</a></div>
                 </div>
             </div>
 
-            <!-- 備忘錄 -->
+            <!-- Notes -->
             <div class="bg-white rounded-xl border border-stone-200 p-4 shadow-sm">
-                 <h3 class="text-sm font-bold text-stone-800 mb-3 flex items-center">
-                    <i data-lucide="sticky-note" class="w-4 h-4 mr-2"></i> 我的備忘錄
-                 </h3>
-                 <div class="flex gap-2 mb-3">
-                    <input type="text" id="new-note-input" placeholder="例：Wifi密碼..." class="flex-1 bg-stone-50 border border-stone-200 rounded-lg px-3 py-2 text-sm outline-none font-sans">
-                    <button onclick="addInfoNote()" class="bg-stone-800 text-white px-3 rounded-lg text-xs font-bold">新增</button>
-                 </div>
+                 <h3 class="text-sm font-bold text-stone-800 mb-3 flex items-center"><i data-lucide="sticky-note" class="w-4 h-4 mr-2"></i> 我的備忘錄</h3>
+                 <div class="flex gap-2 mb-3"><input type="text" id="new-note-input" placeholder="例：Wifi密碼..." class="flex-1 bg-stone-50 border border-stone-200 rounded-lg px-3 py-2 text-sm outline-none font-sans"><button onclick="addInfoNote()" class="bg-stone-800 text-white px-3 rounded-lg text-xs font-bold">新增</button></div>
                  <div id="info-notes-list" class="space-y-2 font-sans"></div>
             </div>
 
-            <!-- 緊急協助 -->
+            <!-- Emergency -->
             <div class="pb-10">
                 <h3 class="text-xs font-bold text-stone-400 uppercase tracking-wider mb-3 ml-1">緊急協助</h3>
-                <div class="grid grid-cols-1 gap-3">
-                     <a href="tel:+81662278623" class="flex items-center p-4 bg-white border border-stone-200 rounded-xl shadow-sm active:bg-stone-50">
-                        <div class="bg-blue-100 p-2.5 rounded-full mr-4">
-                            <i data-lucide="building-2" class="w-5 h-5 text-blue-700"></i>
-                        </div>
-                        <div>
-                            <div class="font-bold text-sm text-stone-800">台北駐大阪經濟文化辦事處</div>
-                            <div class="text-xs text-stone-500">+81-6-6227-8623</div>
-                        </div>
-                    </a>
-                </div>
-                <div class="grid grid-cols-2 gap-3 mt-3">
-                    <a href="tel:110" class="flex items-center p-3 bg-white border border-red-100 rounded-xl shadow-sm active:bg-red-50">
-                        <div class="bg-red-100 p-2 rounded-full mr-3"><i data-lucide="phone" class="w-4 h-4 text-red-600"></i></div>
-                        <span class="font-bold text-sm text-stone-800">報警 110</span>
-                    </a>
-                    <a href="tel:119" class="flex items-center p-3 bg-white border border-green-100 rounded-xl shadow-sm active:bg-green-50">
-                        <div class="bg-green-100 p-2 rounded-full mr-3"><i data-lucide="ambulance" class="w-4 h-4 text-green-600"></i></div>
-                        <span class="font-bold text-sm text-stone-800">急救 119</span>
-                    </a>
-                </div>
+                <div class="grid grid-cols-1 gap-3"><a href="tel:+81662278623" class="flex items-center p-4 bg-white border border-stone-200 rounded-xl shadow-sm active:bg-stone-50"><div class="bg-blue-100 p-2.5 rounded-full mr-4"><i data-lucide="building-2" class="w-5 h-5 text-blue-700"></i></div><div><div class="font-bold text-sm text-stone-800">台北駐大阪經濟文化辦事處</div><div class="text-xs text-stone-500">+81-6-6227-8623</div></div></a></div>
+                <div class="grid grid-cols-2 gap-3 mt-3"><a href="tel:110" class="flex items-center p-3 bg-white border border-red-100 rounded-xl shadow-sm active:bg-red-50"><div class="bg-red-100 p-2 rounded-full mr-3"><i data-lucide="phone" class="w-4 h-4 text-red-600"></i></div><span class="font-bold text-sm text-stone-800">報警 110</span></a><a href="tel:119" class="flex items-center p-3 bg-white border border-green-100 rounded-xl shadow-sm active:bg-green-50"><div class="bg-green-100 p-2 rounded-full mr-3"><i data-lucide="ambulance" class="w-4 h-4 text-green-600"></i></div><span class="font-bold text-sm text-stone-800">急救 119</span></a></div>
             </div>
         </div>
     </div>
 
-    <!-- 6. 放大手指卡 Modal -->
-    <div id="zoom-modal" class="fixed inset-0 bg-black/90 z-[200] hidden flex flex-col justify-center items-center p-6 animate-fade-in" onclick="closeZoomCard()">
-        <div class="text-white text-center w-full max-w-lg" onclick="event.stopPropagation()">
-            <h3 id="zoom-title" class="text-stone-400 text-sm font-bold uppercase tracking-widest mb-6">TITLE</h3>
-            <div id="zoom-jp" class="text-4xl sm:text-5xl font-bold serif-title leading-snug mb-6 text-white">
-                日本語
-            </div>
-            <div id="zoom-ro" class="text-stone-400 font-mono text-sm mb-12">
-                Romaji
-            </div>
-            <button onclick="closeZoomCard()" class="px-8 py-3 rounded-full border border-white/30 text-white text-sm hover:bg-white/10 transition-colors">
-                關閉 (Close)
-            </button>
-        </div>
-    </div>
+    <!-- Modals -->
+    <div id="zoom-modal" class="fixed inset-0 bg-black/90 z-[200] hidden flex flex-col justify-center items-center p-6 animate-fade-in" onclick="closeZoomCard()"><div class="text-white text-center w-full max-w-lg" onclick="event.stopPropagation()"><h3 id="zoom-title" class="text-stone-400 text-sm font-bold uppercase tracking-widest mb-6">TITLE</h3><div id="zoom-jp" class="text-4xl sm:text-5xl font-bold serif-title leading-snug mb-6 text-white"></div><div id="zoom-ro" class="text-stone-400 font-mono text-sm mb-12"></div><button onclick="closeZoomCard()" class="px-8 py-3 rounded-full border border-white/30 text-white text-sm hover:bg-white/10 transition-colors">關閉 (Close)</button></div></div>
+    
+    <div id="add-modal" class="fixed inset-0 bg-stone-900/60 z-[100] hidden flex items-end sm:items-center justify-center sm:p-4 backdrop-blur-sm"><div class="bg-white rounded-t-2xl sm:rounded-2xl w-full max-w-sm p-6 shadow-2xl animate-slide-up"><div class="flex justify-between items-center mb-6"><h3 class="text-lg font-bold text-stone-800" id="modal-title">新增行程</h3><button onclick="closeAddModal()" class="p-2 bg-stone-100 rounded-full hover:bg-stone-200"><i data-lucide="x" class="w-4 h-4"></i></button></div><input type="hidden" id="edit-id" value=""><div class="space-y-4"><div><label class="text-[10px] font-bold text-stone-400 uppercase block mb-1">標題</label><input type="text" id="new-title" class="w-full border-b border-stone-200 py-2 outline-none bg-transparent text-lg font-sans"></div><div><label class="text-[10px] font-bold text-stone-400 uppercase block mb-1">地圖定位 (Google Maps 關鍵字)</label><input type="text" id="new-location" class="w-full border-b border-stone-200 py-2 outline-none bg-transparent text-sm font-sans"><p class="text-[10px] text-stone-400 mt-1">* 輸入地址或店名，導航更準確</p></div><div class="grid grid-cols-2 gap-4"><div><label class="text-[10px] font-bold text-stone-400 uppercase block mb-1">時間</label><input type="time" id="new-time" class="w-full border-b border-stone-200 py-2 outline-none bg-transparent font-mono"></div><div><label class="text-[10px] font-bold text-stone-400 uppercase block mb-1">日期</label><select id="new-day" class="w-full border-b border-stone-200 py-2 outline-none bg-transparent"></select></div></div><div><label class="text-[10px] font-bold text-stone-400 uppercase block mb-2">分類</label><div class="grid grid-cols-4 gap-2"><label class="cursor-pointer"><input type="radio" name="new-type" value="food" class="peer hidden" checked><div class="flex flex-col items-center justify-center p-2 bg-stone-50 rounded-lg border border-stone-100 peer-checked:bg-orange-100 peer-checked:text-orange-700"><i data-lucide="utensils" class="w-4 h-4"></i><span class="text-[10px] mt-1 font-bold">美食</span></div></label><label class="cursor-pointer"><input type="radio" name="new-type" value="spot" class="peer hidden"><div class="flex flex-col items-center justify-center p-2 bg-stone-50 rounded-lg border border-stone-100 peer-checked:bg-stone-200 peer-checked:text-stone-800"><i data-lucide="map-pin" class="w-4 h-4"></i><span class="text-[10px] mt-1 font-bold">景點</span></div></label><label class="cursor-pointer"><input type="radio" name="new-type" value="shop" class="peer hidden"><div class="flex flex-col items-center justify-center p-2 bg-stone-50 rounded-lg border border-stone-100 peer-checked:bg-sky-100 peer-checked:text-sky-700"><i data-lucide="shopping-bag" class="w-4 h-4"></i><span class="text-[10px] mt-1 font-bold">購物</span></div></label><label class="cursor-pointer"><input type="radio" name="new-type" value="flight" class="peer hidden"><div class="flex flex-col items-center justify-center p-2 bg-stone-50 rounded-lg border border-stone-100 peer-checked:bg-stone-200 peer-checked:text-stone-700"><i data-lucide="plane" class="w-4 h-4"></i><span class="text-[10px] mt-1 font-bold">飛行</span></div></label></div></div></div><button onclick="saveItineraryItem()" class="mt-8 w-full py-3.5 rounded-xl bg-stone-800 text-white font-bold shadow-lg hover:bg-black active:scale-[0.98] transition-all flex items-center justify-center"><i data-lucide="check" class="w-4 h-4 mr-2"></i> <span id="modal-btn-text">確認新增</span></button></div></div>
 
-    <!-- 底部導航 -->
-    <nav class="fixed bottom-0 w-full bg-[#F5F5F4]/95 backdrop-blur border-t border-stone-200 pb-safe z-50 rounded-t-xl shadow-[0_-5px_20px_rgba(0,0,0,0.02)]">
-        <div class="flex justify-around items-center h-20 pb-2">
-            <button onclick="switchPage('flight')" class="nav-item active flex flex-col items-center justify-center w-full text-stone-300 transition-colors" id="nav-flight">
-                <i data-lucide="calendar-days" class="w-6 h-6 mb-1"></i>
-                <span class="text-[10px] font-medium">行程</span>
-            </button>
-            <button onclick="switchPage('luggage')" class="nav-item flex flex-col items-center justify-center w-full text-stone-300 transition-colors" id="nav-luggage">
-                <i data-lucide="briefcase" class="w-6 h-6 mb-1"></i>
-                <span class="text-[10px] font-medium">行李</span>
-            </button>
-            <button onclick="switchPage('money')" class="nav-item flex flex-col items-center justify-center w-full text-stone-300 transition-colors" id="nav-money">
-                <i data-lucide="wallet" class="w-6 h-6 mb-1"></i>
-                <span class="text-[10px] font-medium">錢包</span>
-            </button>
-            <button onclick="switchPage('info')" class="nav-item flex flex-col items-center justify-center w-full text-stone-300 transition-colors" id="nav-info">
-                <i data-lucide="info" class="w-6 h-6 mb-1"></i>
-                <span class="text-[10px] font-medium">資訊</span>
-            </button>
-        </div>
-    </nav>
-
-    <!-- Modal: 新增/修改行程 -->
-    <div id="add-modal" class="fixed inset-0 bg-stone-900/60 z-[100] hidden flex items-end sm:items-center justify-center sm:p-4 backdrop-blur-sm">
-        <div class="bg-white rounded-t-2xl sm:rounded-2xl w-full max-w-sm p-6 shadow-2xl animate-slide-up">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="text-lg font-bold text-stone-800" id="modal-title">新增行程</h3>
-                <button onclick="closeAddModal()" class="p-2 bg-stone-100 rounded-full hover:bg-stone-200"><i data-lucide="x" class="w-4 h-4"></i></button>
-            </div>
-            
-            <input type="hidden" id="edit-id" value="">
-
-            <div class="space-y-4">
-                <div>
-                    <label class="text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1 block">標題 / 顯示名稱</label>
-                    <input type="text" id="new-title" placeholder="例：午餐" class="w-full border-b border-stone-200 py-2 text-stone-800 outline-none focus:border-stone-800 bg-transparent text-lg placeholder-stone-300 font-sans">
-                </div>
-                
-                 <div>
-                    <label class="text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1 block">地圖定位 (Google Maps 關鍵字)</label>
-                    <input type="text" id="new-location" placeholder="例：敘敘苑 游玄亭" class="w-full border-b border-stone-200 py-2 text-stone-600 outline-none focus:border-stone-800 bg-transparent text-sm placeholder-stone-300 font-sans">
-                    <p class="text-[10px] text-stone-400 mt-1">* 輸入精確地址或店名，導航更準確</p>
-                </div>
-                
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1 block">時間</label>
-                        <input type="time" id="new-time" class="w-full border-b border-stone-200 py-2 text-stone-800 outline-none focus:border-stone-800 bg-transparent font-mono">
-                    </div>
-                    <div>
-                        <label class="text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1 block">日期</label>
-                        <select id="new-day" class="w-full border-b border-stone-200 py-2 text-stone-800 outline-none bg-transparent">
-                            <!-- JS Generated -->
-                        </select>
-                    </div>
-                </div>
-
-                <div>
-                    <label class="text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-3 block">分類</label>
-                    <div class="grid grid-cols-4 gap-2">
-                        <label class="cursor-pointer">
-                            <input type="radio" name="new-type" value="food" class="peer hidden" checked>
-                            <div class="flex flex-col items-center justify-center p-2 bg-stone-50 rounded-lg border border-stone-100 peer-checked:bg-orange-100 peer-checked:text-orange-700 transition-all">
-                                <i data-lucide="utensils" class="w-4 h-4"></i>
-                                <span class="text-[10px] mt-1 font-bold">美食</span>
-                            </div>
-                        </label>
-                        <label class="cursor-pointer">
-                            <input type="radio" name="new-type" value="spot" class="peer hidden">
-                            <div class="flex flex-col items-center justify-center p-2 bg-stone-50 rounded-lg border border-stone-100 peer-checked:bg-stone-200 peer-checked:text-stone-800 transition-all">
-                                <i data-lucide="map-pin" class="w-4 h-4"></i>
-                                <span class="text-[10px] mt-1 font-bold">景點</span>
-                            </div>
-                        </label>
-                        <label class="cursor-pointer">
-                            <input type="radio" name="new-type" value="shop" class="peer hidden">
-                            <div class="flex flex-col items-center justify-center p-2 bg-stone-50 rounded-lg border border-stone-100 peer-checked:bg-sky-100 peer-checked:text-sky-700 transition-all">
-                                <i data-lucide="shopping-bag" class="w-4 h-4"></i>
-                                <span class="text-[10px] mt-1 font-bold">購物</span>
-                            </div>
-                        </label>
-                        <label class="cursor-pointer">
-                            <input type="radio" name="new-type" value="flight" class="peer hidden">
-                            <div class="flex flex-col items-center justify-center p-2 bg-stone-50 rounded-lg border border-stone-100 peer-checked:bg-stone-200 peer-checked:text-stone-700 transition-all">
-                                <i data-lucide="plane" class="w-4 h-4"></i>
-                                <span class="text-[10px] mt-1 font-bold">飛行</span>
-                            </div>
-                        </label>
-                    </div>
-                </div>
-            </div>
-
-            <button onclick="saveItineraryItem()" class="mt-8 w-full py-3.5 rounded-xl bg-stone-800 text-white font-bold shadow-lg hover:bg-black active:scale-[0.98] transition-all flex items-center justify-center">
-                <i data-lucide="check" class="w-4 h-4 mr-2"></i> <span id="modal-btn-text">確認新增</span>
-            </button>
-        </div>
-    </div>
-
-    <!-- Leaflet JS -->
+    <!-- Scripts -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
     <script>
-        // --- CONFIG ---
-        const firebaseConfig = JSON.parse(new URLSearchParams(window.location.search).get('firebase_config') || '{}');
-        const appId = 'osaka-2025-v4-map';
-        let db, auth, userId;
-
-        // Date: 2025/12/13 (Sat)
         const TRIP_START = new Date('2025-12-13T00:00:00');
         const TOTAL_DAYS = 6;
         const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const SCENIC_IMAGES = ["https://images.unsplash.com/photo-1542051841857-5f90071e7989?q=80&w=1200", "https://images.unsplash.com/photo-1505337833003-88220268523c?q=80&w=1200", "https://images.unsplash.com/photo-1478436127897-769e1b3f0f36?q=80&w=1200", "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?q=80&w=1200", "https://images.unsplash.com/photo-1572975765715-288219662e08?q=80&w=1200", "https://images.unsplash.com/photo-1605626993138-03822295696d?q=80&w=1200"];
+        const WEATHER_DATA = [{icon:'⛅',temp:'8°/14°',rain:'10%'},{icon:'☀️',temp:'7°/15°',rain:'0%'},{icon:'☀️',temp:'6°/13°',rain:'0%'},{icon:'☁️',temp:'8°/12°',rain:'20%'},{icon:'🌧️',temp:'5°/10°',rain:'60%'},{icon:'⛅',temp:'6°/13°',rain:'10%'}];
         
-        // Scenic Images (銀杏 & 楓葉)
-        const SCENIC_IMAGES = [
-            "https://images.unsplash.com/photo-1542051841857-5f90071e7989?q=80&w=1200&auto=format&fit=crop", 
-            "https://images.unsplash.com/photo-1505337833003-88220268523c?q=80&w=1200&auto=format&fit=crop", 
-            "https://images.unsplash.com/photo-1478436127897-769e1b3f0f36?q=80&w=1200&auto=format&fit=crop", 
-            "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?q=80&w=1200&auto=format&fit=crop", 
-            "https://images.unsplash.com/photo-1572975765715-288219662e08?q=80&w=1200&auto=format&fit=crop", 
-            "https://images.unsplash.com/photo-1605626993138-03822295696d?q=80&w=1200&auto=format&fit=crop"
-        ];
-        
-        let userHeaderImage = null; // Store user uploaded image data URL
-
-        const WEATHER_DATA = [
-            { icon: '⛅', temp: '8° / 14°', rain: '10%' },
-            { icon: '☀️', temp: '7° / 15°', rain: '0%' },
-            { icon: '☀️', temp: '6° / 13°', rain: '0%' },
-            { icon: '☁️', temp: '8° / 12°', rain: '20%' },
-            { icon: '🌧️', temp: '5° / 10°', rain: '60%' },
-            { icon: '⛅', temp: '6° / 13°', rain: '10%' }
-        ];
-
-        let currentDayIndex = 0; 
+        let currentDayIndex = 0;
         let mapInstance = null;
+        let userHeaderImage = localStorage.getItem('osaka_header_img');
+        let itineraryData = [];
 
-        // Default Itinerary with REAL Coordinates for Leaflet
+        // --- CONFIG ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyBGmvolsS8AgPfm09qynSVIz5GOcvXDKCM",
+            authDomain: "osaka-family-trip.firebaseapp.com",
+            databaseURL: "https://osaka-family-trip-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "osaka-family-trip",
+            storageBucket: "osaka-family-trip.firebasestorage.app",
+            messagingSenderId: "303743481222",
+            appId: "1:303743481222:web:e3e4ecb51ff89a3acfe807"
+        };
+        const appId = 'osaka-2025-v4-map';
+        let db, auth, userId;
+
         const DEFAULT_ITINERARY = [
             { id: 'd1_1', day: 0, time: '15:25', title: 'KHH 高雄起飛 (CI 176)', type: 'flight', location: '高雄小港機場', lat: 22.57, lng: 120.35 },
             { id: 'd1_2', day: 0, time: '19:10', title: '抵達關西機場 (KIX)', type: 'flight', location: '關西國際機場', lat: 34.434, lng: 135.235 },
@@ -509,7 +272,7 @@
             { id: 'd6_3', day: 5, time: '22:45', title: '抵達高雄 (KHH)', type: 'flight', location: 'Kaohsiung Airport', lat: 22.57, lng: 120.35 }
         ];
 
-        // --- INIT ---
+        // INIT
         document.addEventListener('DOMContentLoaded', async () => {
             lucide.createIcons();
             initDateTabs();
@@ -518,18 +281,18 @@
             initExpenses();
             initInfoNotes();
 
-            if (typeof firebase !== 'undefined' && firebaseConfig.apiKey) {
+            // Firebase Init
+            try {
                 firebase.initializeApp(firebaseConfig);
                 db = firebase.firestore();
                 auth = firebase.auth();
-                try {
-                    const cred = await auth.signInAnonymously();
-                    userId = cred.user.uid;
-                    setupItineraryListener();
-                } catch(e) { renderLocalItinerary(); }
-            } else {
-                userId = 'local-user';
-                renderLocalItinerary();
+                // 1. 公開的行程 (Public Data)
+                await auth.signInAnonymously();
+                setupPublicItineraryListener();
+            } catch(e) { 
+                console.error("Firebase Auth Error", e);
+                // Fallback to local if offline/error
+                initItineraryLocal();
             }
 
             setTimeout(() => {
@@ -537,315 +300,107 @@
                 setTimeout(() => {
                     document.getElementById('splash-screen').style.display = 'none';
                     document.getElementById('page-flight').classList.add('active');
-                    // Force render again to ensure map container exists
                     renderItineraryList();
                 }, 800);
-            }, 2500);
+            }, 2000);
         });
 
-        // --- NAV ---
-        function switchPage(pageId) {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.getElementById('page-' + pageId).classList.add('active');
-            
-            document.querySelectorAll('.nav-item').forEach(n => {
-                n.classList.remove('active', 'text-stone-800');
-                n.classList.add('text-stone-300');
-            });
-            const btn = document.getElementById('nav-' + pageId);
-            btn.classList.add('active', 'text-stone-800');
-            btn.classList.remove('text-stone-300');
+        function switchPage(p) {
+            document.querySelectorAll('.page').forEach(e=>e.classList.remove('active'));
+            document.getElementById('page-'+p).classList.add('active');
+            document.querySelectorAll('.nav-item').forEach(e=>{e.classList.remove('active','text-stone-800');e.classList.add('text-stone-300')});
+            document.getElementById('nav-'+p).classList.add('active','text-stone-800');
+            document.getElementById('nav-'+p).classList.remove('text-stone-300');
             lucide.createIcons();
-            
-            // Fix map size when switching back
-            if(pageId === 'flight' && mapInstance) {
-                setTimeout(() => mapInstance.invalidateSize(), 100);
-            }
+            if(p==='flight' && mapInstance) setTimeout(()=>mapInstance.invalidateSize(),100);
         }
 
-        // --- WEATHER UI ---
-        function initWeather() {
-            const container = document.getElementById('weather-strip');
-            WEATHER_DATA.forEach((w, i) => {
-                const date = new Date(TRIP_START);
-                date.setDate(TRIP_START.getDate() + i);
-                const isToday = i === currentDayIndex;
-                const week = WEEKDAYS[date.getDay()];
-                
-                const el = document.createElement('div');
-                el.className = `weather-card flex flex-col items-center justify-center p-2 rounded-lg min-w-[70px] border transition-all cursor-pointer ${isToday ? 'bg-white border-stone-300 shadow-sm' : 'bg-transparent border-transparent opacity-60'}`;
-                el.onclick = () => setDay(i);
-                el.innerHTML = `
-                    <span class="text-[10px] font-bold text-stone-400 mb-1">${date.getMonth()+1}/${date.getDate()} (${week})</span>
-                    <span class="text-xl mb-1">${w.icon}</span>
-                    <span class="text-[10px] font-bold text-stone-600">${w.temp}</span>
-                `;
-                el.id = `weather-card-${i}`;
-                container.appendChild(el);
-            });
-        }
-
-        function updateWeatherHighlight(index) {
-            document.querySelectorAll('.weather-card').forEach((el, i) => {
-                if(i === index) {
-                    el.className = 'weather-card flex flex-col items-center justify-center p-2 rounded-lg min-w-[70px] border transition-all cursor-pointer bg-white border-stone-300 shadow-sm transform scale-105';
-                } else {
-                    el.className = 'weather-card flex flex-col items-center justify-center p-2 rounded-lg min-w-[70px] border transition-all cursor-pointer bg-transparent border-transparent opacity-60';
-                }
-            });
-        }
-
-        // --- ITINERARY ---
-        function initDateTabs() {
-            const container = document.getElementById('date-tabs');
-            const select = document.getElementById('new-day');
-            
-            for(let i=0; i<TOTAL_DAYS; i++) {
-                const date = new Date(TRIP_START);
-                date.setDate(TRIP_START.getDate() + i);
-                const month = date.getMonth() + 1;
-                const day = date.getDate();
-                const week = WEEKDAYS[date.getDay()];
-                
-                const btn = document.createElement('button');
-                btn.className = `date-tab flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-bold border transition-all ${i===0 ? 'bg-stone-800 text-white border-stone-800' : 'bg-white text-stone-400 border-stone-200'}`;
-                btn.innerText = `Day ${i+1} (${week})`;
-                btn.onclick = () => setDay(i);
-                container.appendChild(btn);
-
-                const opt = document.createElement('option');
-                opt.value = i;
-                opt.text = `Day ${i+1} - ${month}/${day} (${week})`;
-                select.appendChild(opt);
-            }
-            updateHeaderImage(0);
-        }
-
-        function handleHeaderUpload(event) {
-            const file = event.target.files[0];
-            if(file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    userHeaderImage = e.target.result;
-                    document.getElementById('daily-scenic-img').src = userHeaderImage;
-                }
-                reader.readAsDataURL(file);
-            }
-        }
-
-        function updateHeaderImage(index) {
-            const img = document.getElementById('daily-scenic-img');
-            img.style.opacity = '0';
-            setTimeout(() => {
-                if(userHeaderImage) {
-                    img.src = userHeaderImage;
-                } else {
-                    img.src = SCENIC_IMAGES[index % SCENIC_IMAGES.length];
-                }
-                img.onload = () => img.style.opacity = '1';
-            }, 300);
-        }
-
-        function setDay(index) {
-            currentDayIndex = index;
-            document.querySelectorAll('.date-tab').forEach((t, i) => {
-                t.className = i === index 
-                    ? 'date-tab flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-bold border transition-all bg-stone-800 text-white border-stone-800 shadow-md'
-                    : 'date-tab flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-bold border transition-all bg-white text-stone-400 border-stone-200';
-            });
-            
-            document.getElementById('header-day-num').innerText = index + 1;
-            updateHeaderImage(index);
-            updateWeatherHighlight(index);
-            renderItineraryList();
-        }
-
-        let itineraryCache = [];
+        // --- PUBLIC ITINERARY LOGIC (SHARED) ---
+        // Path: /artifacts/osaka-2025-family/public/data/itinerary
         
-        function setupItineraryListener() {
-            if (!db || !userId) return;
-            db.collection('artifacts').doc(appId).collection('users').doc(userId).collection('itinerary')
+        function setupPublicItineraryListener() {
+            // Using a shared path for family
+            db.collection('artifacts').doc(appId).collection('public').doc('data').collection('itinerary')
               .onSnapshot(snap => {
                   const fetched = snap.docs.map(d => ({id: d.id, ...d.data()}));
                   if(fetched.length === 0) {
+                      // Init Defaults if empty
                       DEFAULT_ITINERARY.forEach(async f => {
-                          await db.collection('artifacts').doc(appId).collection('users').doc(userId).collection('itinerary').add({...f, created: Date.now()});
+                          await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('itinerary').add({...f, created: Date.now()});
                       });
                   } else {
-                      itineraryCache = fetched;
+                      itineraryData = fetched;
                       renderItineraryList();
                   }
               });
         }
 
-        function renderLocalItinerary() {
-            if(itineraryCache.length === 0) itineraryCache = [...DEFAULT_ITINERARY];
+        function initItineraryLocal() {
+            const saved = localStorage.getItem('osaka_itinerary_2025_v5');
+            itineraryData = saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(DEFAULT_ITINERARY));
             renderItineraryList();
         }
 
         function renderItineraryList() {
             const list = document.getElementById('itinerary-list');
             list.innerHTML = '';
+            const dayItems = itineraryData.filter(i => parseInt(i.day) === currentDayIndex).sort((a,b) => a.time.localeCompare(b.time));
             
-            const dayItems = itineraryCache
-                .filter(i => parseInt(i.day) === currentDayIndex)
-                .sort((a,b) => a.time.localeCompare(b.time));
-
             if(dayItems.length === 0) {
                 list.innerHTML = `<div class="text-center py-10 opacity-30"><p class="text-xs">尚無行程</p></div>`;
                 return;
             }
 
-            // 1. Render Items
             dayItems.forEach(item => {
-                let bgClass = 'bg-white border-stone-100';
-                let iconColor = 'text-stone-300';
-                let typeIcon = 'map-pin';
+                let bg='bg-white border-stone-100', ic='text-stone-300', icon='map-pin';
+                if(item.type==='food'){bg='bg-orange-50/50 border-orange-100';ic='text-orange-400';icon='utensils';}
+                else if(item.type==='shop'){bg='bg-sky-50/50 border-sky-100';ic='text-sky-400';icon='shopping-bag';}
+                else if(item.type==='flight'){bg='bg-stone-100 border-stone-200';ic='text-stone-400';icon='plane';}
                 
-                if (item.type === 'food') {
-                    bgClass = 'bg-orange-50/50 border-orange-100'; 
-                    iconColor = 'text-orange-400';
-                    typeIcon = 'utensils';
-                } else if (item.type === 'shop') {
-                    bgClass = 'bg-sky-50/50 border-sky-100'; 
-                    iconColor = 'text-sky-400';
-                    typeIcon = 'shopping-bag';
-                } else if (item.type === 'flight') {
-                    bgClass = 'bg-stone-100 border-stone-200';
-                    iconColor = 'text-stone-400';
-                    typeIcon = 'plane';
-                }
-
-                const query = item.location || item.title;
-                const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
-
-                const el = document.createElement('div');
-                el.className = `flex items-center p-4 rounded-xl border ${bgClass} relative group transition-all mb-2 shadow-sm`;
-                el.innerHTML = `
-                    <div class="mr-4 text-center min-w-[3.5rem]">
-                        <div class="text-lg font-bold font-mono text-stone-800 leading-none">${item.time}</div>
-                    </div>
+                const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.location||item.title)}`;
+                const div = document.createElement('div');
+                div.className = `flex items-center p-4 rounded-xl border ${bg} relative group transition-all mb-2 shadow-sm`;
+                div.innerHTML = `
+                    <div class="mr-4 text-center min-w-[3.5rem]"><div class="text-lg font-bold font-mono text-stone-800 leading-none">${item.time}</div></div>
                     <div class="flex-1 border-l border-stone-200 pl-4 py-1">
-                        <div class="flex justify-between items-start">
-                             <h3 class="font-bold text-stone-800 text-sm">${item.title}</h3>
-                        </div>
-                        <div class="flex items-center mt-1">
-                            <i data-lucide="${typeIcon}" class="w-3 h-3 mr-1.5 ${iconColor}"></i>
-                            <span class="text-[10px] text-stone-400 uppercase tracking-wider font-bold">${item.type}</span>
-                            ${item.location && item.location !== item.title ? `<span class="ml-2 text-[10px] text-stone-300 truncate max-w-[100px]"><i data-lucide="map-pin" class="inline w-2 h-2"></i> ${item.location}</span>` : ''}
-                        </div>
+                        <div class="flex justify-between items-start"><h3 class="font-bold text-stone-800 text-sm">${item.title}</h3></div>
+                        <div class="flex items-center mt-1"><i data-lucide="${icon}" class="w-3 h-3 mr-1.5 ${ic}"></i><span class="text-[10px] text-stone-400 uppercase tracking-wider font-bold">${item.type}</span>${item.location && item.location!==item.title ? `<span class="ml-2 text-[10px] text-stone-300 truncate max-w-[100px]"><i data-lucide="map-pin" class="inline w-2 h-2"></i> ${item.location}</span>`:''}</div>
                     </div>
                     <div class="flex flex-col gap-2 ml-2">
-                         <a href="${mapUrl}" target="_blank" class="p-2 bg-white border border-stone-100 rounded-full text-stone-400 hover:text-blue-600 shadow-sm"><i data-lucide="navigation" class="w-4 h-4"></i></a>
-                         <div class="flex gap-1">
-                             <button onclick="openEditModal('${item.id}')" class="p-2 bg-white border border-stone-100 rounded-full text-stone-400 hover:text-stone-800 shadow-sm"><i data-lucide="pencil" class="w-4 h-4"></i></button>
-                             <button onclick="deleteItinerary('${item.id}')" class="p-2 bg-white border border-stone-100 rounded-full text-stone-400 hover:text-red-500 shadow-sm"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                         </div>
-                    </div>
-                `;
-                list.appendChild(el);
+                        <a href="${mapUrl}" target="_blank" class="p-2 bg-white border border-stone-100 rounded-full text-stone-400 hover:text-blue-600 shadow-sm"><i data-lucide="navigation" class="w-4 h-4"></i></a>
+                        <div class="flex gap-1">
+                            <button onclick="openEditModal('${item.id}')" class="p-2 bg-white border border-stone-100 rounded-full text-stone-400 hover:text-stone-800 shadow-sm"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+                            <button onclick="deleteItinerary('${item.id}')" class="p-2 bg-white border border-stone-100 rounded-full text-stone-400 hover:text-red-500 shadow-sm"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                        </div>
+                    </div>`;
+                list.appendChild(div);
             });
-            
-            // 2. Render Interactive Map Card
-            // Only show map if there are spots with coords (mocked for now for default items)
+
+            // Map Card
             const mapItems = dayItems.filter(i => i.lat && i.lng);
-            
-            // Container for Map (Interactive)
             const mapContainer = document.createElement('div');
             mapContainer.className = "mt-6 overflow-hidden rounded-2xl shadow-md border border-stone-200 bg-white";
-            // Important: Give it an explicit height
-            mapContainer.innerHTML = `
-                <div class="h-64 w-full relative z-0" id="map-wrap-${currentDayIndex}"></div>
-                <div class="p-3 bg-white text-center border-t border-stone-100">
-                    <a href="#" id="google-maps-btn" target="_blank" class="block w-full py-2 bg-blue-50 text-blue-600 rounded-lg text-xs font-bold hover:bg-blue-100 transition-colors">
-                        <i data-lucide="external-link" class="w-3 h-3 inline mr-1"></i> 開啟 Google Maps 導航
-                    </a>
-                </div>
-            `;
+            mapContainer.innerHTML = `<div class="h-64 w-full relative z-0" id="map-wrap-${currentDayIndex}"></div><div class="p-3 bg-white text-center border-t border-stone-100"><a href="#" id="google-maps-btn" target="_blank" class="block w-full py-2 bg-blue-50 text-blue-600 rounded-lg text-xs font-bold hover:bg-blue-100 transition-colors"><i data-lucide="external-link" class="w-3 h-3 inline mr-1"></i> 開啟 Google Maps 導航</a></div>`;
             list.appendChild(mapContainer);
 
-            // Initialize Leaflet
             setTimeout(() => {
-                const mapId = `map-wrap-${currentDayIndex}`;
-                const element = document.getElementById(mapId);
-                if (element) {
-                    if (mapInstance) {
-                        mapInstance.remove();
-                        mapInstance = null;
-                    }
-                    
-                    // Default center (Osaka)
+                const mid = `map-wrap-${currentDayIndex}`;
+                if(document.getElementById(mid)) {
+                    if(mapInstance) { mapInstance.remove(); mapInstance=null; }
                     const center = mapItems.length > 0 ? [mapItems[0].lat, mapItems[0].lng] : [34.6937, 135.5023];
-                    mapInstance = L.map(mapId).setView(center, 13);
-
-                    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-                        attribution: '&copy; OpenStreetMap &copy; CARTO',
-                        subdomains: 'abcd',
-                        maxZoom: 19
-                    }).addTo(mapInstance);
-
-                    if (mapItems.length > 0) {
-                        const bounds = [];
-                        mapItems.forEach((item, idx) => {
-                            const marker = L.marker([item.lat, item.lng])
-                                .addTo(mapInstance)
-                                .bindPopup(`<b style="font-family:'Noto Sans TC'">${item.time} ${item.title}</b>`);
-                            bounds.push([item.lat, item.lng]);
-                        });
-                        // Fit bounds to show all markers
-                        if (bounds.length > 1) {
-                            mapInstance.fitBounds(bounds, { padding: [50, 50] });
-                        }
-                        
-                        // Update Google Maps Link with all points
-                        const query = mapItems.map(i => i.title).join('/');
-                        document.getElementById('google-maps-btn').href = `https://www.google.com/maps/dir/${query}`;
-                    } else {
-                         // Fallback Google link
-                         document.getElementById('google-maps-btn').href = `https://www.google.com/maps/search/Osaka`;
-                    }
+                    mapInstance = L.map(mid).setView(center, 13);
+                    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {attribution:'&copy; OSM',maxZoom:19}).addTo(mapInstance);
+                    const bounds = [];
+                    mapItems.forEach(i => { L.marker([i.lat,i.lng]).addTo(mapInstance).bindPopup(i.title); bounds.push([i.lat,i.lng]); });
+                    if(bounds.length>1) mapInstance.fitBounds(bounds, {padding:[50,50]});
+                    
+                    const q = mapItems.map(i=>i.title).join('/');
+                    document.getElementById('google-maps-btn').href = mapItems.length ? `https://www.google.com/maps/dir/${q}` : `https://www.google.com/maps/search/Osaka`;
                 }
             }, 100);
-
             lucide.createIcons();
         }
 
-        // --- MODAL (ADD & EDIT) ---
-        function openAddModal() { 
-            document.getElementById('add-modal').classList.remove('hidden'); 
-            document.getElementById('new-day').value = currentDayIndex;
-            document.getElementById('modal-title').innerText = "新增行程";
-            document.getElementById('modal-btn-text').innerText = "確認新增";
-            document.getElementById('edit-id').value = ""; 
-            
-            // Clear inputs
-            document.getElementById('new-title').value = "";
-            document.getElementById('new-location').value = "";
-            document.getElementById('new-time').value = "";
-        }
-
-        function openEditModal(id) {
-            const item = itineraryCache.find(i => i.id === id);
-            if(!item) return;
-
-            document.getElementById('add-modal').classList.remove('hidden');
-            document.getElementById('modal-title').innerText = "修改行程";
-            document.getElementById('modal-btn-text').innerText = "儲存修改";
-            document.getElementById('edit-id').value = id;
-
-            document.getElementById('new-title').value = item.title;
-            document.getElementById('new-location').value = item.location || "";
-            document.getElementById('new-time').value = item.time;
-            document.getElementById('new-day').value = item.day;
-            
-            const radios = document.getElementsByName('new-type');
-            for(let r of radios) {
-                if(r.value === item.type) r.checked = true;
-            }
-        }
-
-        function closeAddModal() { document.getElementById('add-modal').classList.add('hidden'); }
-        
         async function saveItineraryItem() {
             const id = document.getElementById('edit-id').value;
             const title = document.getElementById('new-title').value;
@@ -853,187 +408,117 @@
             const time = document.getElementById('new-time').value;
             const day = parseInt(document.getElementById('new-day').value);
             const type = document.querySelector('input[name="new-type"]:checked').value;
-            
             if(!title || !time) return alert('請填寫完整');
             
-            // Note: For real lat/lng from user input, you'd need a geocoding API. 
-            // Here we save the data, but new user points won't show on the interactive map until geocoded.
             const itemData = { title, location: location || title, time, day, type, created: Date.now() };
+            // Mock coords for simple adder
+            if(type !== 'flight') { itemData.lat = 34.6937 + (Math.random()*0.02-0.01); itemData.lng = 135.5023 + (Math.random()*0.02-0.01); } 
 
-            if(db && userId) {
+            if(db) {
+                // Cloud Save (Public)
                 if(id) {
-                    await db.collection('artifacts').doc(appId).collection('users').doc(userId).collection('itinerary').doc(id).update(itemData);
+                    await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('itinerary').doc(id).update(itemData);
                 } else {
-                    await db.collection('artifacts').doc(appId).collection('users').doc(userId).collection('itinerary').add(itemData);
+                    await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('itinerary').add(itemData);
                 }
             } else {
-                if(id) {
-                    itineraryCache = itineraryCache.map(i => i.id === id ? { ...i, ...itemData, id } : i);
-                } else {
-                    itineraryCache.push({ id: Date.now().toString(), ...itemData });
-                }
+                // Local Fallback
+                if(id) itineraryData = itineraryData.map(i => i.id === id ? { ...i, ...itemData, id } : i);
+                else itineraryData.push({ ...itemData, id: Date.now().toString() });
+                localStorage.setItem('osaka_itinerary_2025_v5', JSON.stringify(itineraryData));
                 renderItineraryList();
             }
             closeAddModal();
         }
 
         async function deleteItinerary(id) {
-            if(!confirm('確認刪除此行程？')) return;
-            if(db && userId) {
-                await db.collection('artifacts').doc(appId).collection('users').doc(userId).collection('itinerary').doc(id).delete();
-            } else {
-                itineraryCache = itineraryCache.filter(i => i.id !== id);
-                renderItineraryList();
+            if(confirm('確認刪除？')) {
+                if(db) {
+                    await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('itinerary').doc(id).delete();
+                } else {
+                    itineraryData = itineraryData.filter(i => i.id !== id);
+                    localStorage.setItem('osaka_itinerary_2025_v5', JSON.stringify(itineraryData));
+                    renderItineraryList();
+                }
             }
         }
 
-        // --- ZOOM CARD LOGIC ---
-        function openZoomCard(title, jp, ro) {
-            document.getElementById('zoom-modal').classList.remove('hidden');
-            document.getElementById('zoom-modal').classList.add('flex');
-            document.getElementById('zoom-title').innerText = title;
-            document.getElementById('zoom-jp').innerHTML = jp;
-            document.getElementById('zoom-ro').innerText = ro;
+        // Standard UI Functions
+        function initDateTabs() {
+            const container = document.getElementById('date-tabs');
+            const select = document.getElementById('new-day');
+            for(let i=0; i<TOTAL_DAYS; i++) {
+                const date = new Date(TRIP_START); date.setDate(TRIP_START.getDate() + i);
+                const month = date.getMonth() + 1; const day = date.getDate(); const week = WEEKDAYS[date.getDay()];
+                const btn = document.createElement('button');
+                btn.className = `date-tab flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-bold border transition-all ${i===0?'bg-stone-800 text-white border-stone-800':'bg-white text-stone-400 border-stone-200'}`;
+                btn.innerText = `Day ${i+1} (${week})`;
+                btn.onclick = () => setDay(i);
+                container.appendChild(btn);
+                const opt = document.createElement('option'); opt.value = i; opt.text = `Day ${i+1} - ${month}/${day} (${week})`; select.appendChild(opt);
+            }
+            updateHeaderImage(0);
         }
-
-        function closeZoomCard() {
-            document.getElementById('zoom-modal').classList.add('hidden');
-            document.getElementById('zoom-modal').classList.remove('flex');
+        function setDay(index) {
+            currentDayIndex = index;
+            document.querySelectorAll('.date-tab').forEach((t, i) => {
+                t.className = i === index ? 'date-tab flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-bold border transition-all bg-stone-800 text-white border-stone-800 shadow-md' : 'date-tab flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-bold border transition-all bg-white text-stone-400 border-stone-200';
+            });
+            document.getElementById('header-day-num').innerText = index + 1;
+            updateHeaderImage(index);
+            updateWeatherHighlight(index);
+            renderItineraryList();
         }
-
-        // --- MAP UPLOAD LOGIC ---
-        function handleMapUpload(event) {
-            const file = event.target.files[0];
+        function handleHeaderUpload(e) {
+            const file = e.target.files[0];
             if(file) {
                 const reader = new FileReader();
-                reader.onload = function(e) {
-                    document.getElementById('user-map-img').src = e.target.result;
+                reader.onload = function(evt) {
+                    userHeaderImage = evt.target.result;
+                    localStorage.setItem('osaka_header_img', userHeaderImage); // Save custom header
+                    document.getElementById('daily-scenic-img').src = userHeaderImage;
                 }
                 reader.readAsDataURL(file);
             }
         }
+        function updateHeaderImage(index) {
+            const img = document.getElementById('daily-scenic-img');
+            img.style.opacity = '0';
+            setTimeout(() => {
+                img.src = userHeaderImage || SCENIC_IMAGES[index % SCENIC_IMAGES.length];
+                img.onload = () => img.style.opacity = '1';
+            }, 300);
+        }
+        function initWeather(){const c=document.getElementById('weather-strip');WEATHER_DATA.forEach((w,i)=>{const d=new Date(TRIP_START);d.setDate(TRIP_START.getDate()+i);const isToday=i===currentDayIndex;const el=document.createElement('div');el.className=`weather-card flex flex-col items-center justify-center p-2 rounded-lg min-w-[70px] border transition-all cursor-pointer ${isToday?'bg-white border-stone-300 shadow-sm':'bg-transparent border-transparent opacity-60'}`;el.onclick=()=>setDay(i);el.innerHTML=`<span class="text-[10px] font-bold text-stone-400 mb-1">${d.getMonth()+1}/${d.getDate()}</span><span class="text-xl mb-1">${w.icon}</span><span class="text-[10px] font-bold text-stone-600">${w.temp}</span>`;c.appendChild(el);});}
+        function updateWeatherHighlight(idx){document.querySelectorAll('.weather-card').forEach((el,i)=>{if(i===idx){el.classList.add('bg-white','border-stone-300','shadow-sm','scale-105');el.classList.remove('bg-transparent','border-transparent','opacity-60');}else{el.classList.remove('bg-white','border-stone-300','shadow-sm','scale-105');el.classList.add('bg-transparent','border-transparent','opacity-60');}});}
+        
+        // Modals
+        function openAddModal(){document.getElementById('add-modal').classList.remove('hidden');document.getElementById('new-day').value=currentDayIndex;document.getElementById('modal-title').innerText="新增行程";document.getElementById('modal-btn-text').innerText="確認新增";document.getElementById('edit-id').value="";document.getElementById('new-title').value="";document.getElementById('new-location').value="";document.getElementById('new-time').value="";}
+        function openEditModal(id){const item=itineraryData.find(i=>i.id===id);if(!item)return;document.getElementById('add-modal').classList.remove('hidden');document.getElementById('modal-title').innerText="修改行程";document.getElementById('modal-btn-text').innerText="儲存修改";document.getElementById('edit-id').value=id;document.getElementById('new-title').value=item.title;document.getElementById('new-location').value=item.location||"";document.getElementById('new-time').value=item.time;document.getElementById('new-day').value=item.day;const radios=document.getElementsByName('new-type');for(let r of radios){if(r.value===item.type)r.checked=true;}}
+        function closeAddModal(){document.getElementById('add-modal').classList.add('hidden');}
+        
+        // Other Features (Local Storage Only)
+        function initLuggage(){const s=localStorage.getItem('osaka_luggage_2025_v2');let d=s?JSON.parse(s):[{id:1,text:'護照',checked:false},{id:2,text:'網卡',checked:false}];renderLuggage(d);}
+        function renderLuggage(d){const c=document.getElementById('luggage-list');c.innerHTML='';const done=d.filter(i=>i.checked).length;document.getElementById('luggage-count').innerText=`${done}/${d.length}`;document.getElementById('progress-bar').style.width=d.length?(done/d.length)*100+'%':'0%';d.forEach(i=>{const el=document.createElement('div');el.className='flex items-center justify-between p-3 bg-white border border-stone-200 rounded-lg group hover:shadow-sm transition-all';el.innerHTML=`<label class="flex items-center flex-1 cursor-pointer select-none"><input type="checkbox" class="w-5 h-5 rounded border-stone-300 text-stone-800 focus:ring-stone-500 mr-3" ${i.checked?'checked':''} onchange="toggleLuggage(${i.id})"><span class="${i.checked?'line-through text-stone-300':'text-stone-700'} text-sm font-medium transition-colors">${i.text}</span></label><button onclick="deleteLuggage(${i.id})" class="opacity-0 group-hover:opacity-100 text-stone-300 hover:text-red-400 transition-all px-2"><i data-lucide="x" class="w-4 h-4"></i></button>`;c.appendChild(el);});localStorage.setItem('osaka_luggage_2025_v2',JSON.stringify(d));}
+        function addLuggageItem(){const v=document.getElementById('new-luggage-item').value;if(v){const s=localStorage.getItem('osaka_luggage_2025_v2');let d=s?JSON.parse(s):[];d.push({id:Date.now(),text:v,checked:false});document.getElementById('new-luggage-item').value='';renderLuggage(d);}}
+        function toggleLuggage(id){const s=localStorage.getItem('osaka_luggage_2025_v2');let d=s?JSON.parse(s):[];d=d.map(i=>i.id===id?{...i,checked:!i.checked}:i);renderLuggage(d);}
+        function deleteLuggage(id){const s=localStorage.getItem('osaka_luggage_2025_v2');let d=s?JSON.parse(s):[];d=d.filter(i=>i.id!==id);renderLuggage(d);}
+        
+        let expenses=[];let showTWD=false;
+        function initExpenses(){const s=localStorage.getItem('osaka_expenses_2025');if(s)expenses=JSON.parse(s);renderExpenses();}
+        function calculateExchange(){document.getElementById('twd-output').innerText=Math.round((parseFloat(document.getElementById('jpy-input').value)||0)*0.215).toLocaleString();}
+        function addExpense(){const n=document.getElementById('expense-note').value;const a=parseInt(document.getElementById('expense-amt').value);if(n&&!isNaN(a)){expenses.unshift({id:Date.now(),note:n,amt:a});document.getElementById('expense-note').value='';document.getElementById('expense-amt').value='';renderExpenses();}}
+        function deleteExpense(id){expenses=expenses.filter(e=>e.id!==id);renderExpenses();}
+        function renderExpenses(){const c=document.getElementById('expense-list');c.innerHTML='';let t=0;expenses.forEach(e=>{t+=e.amt;const d=document.createElement('div');d.className='flex justify-between items-center py-3 border-b border-stone-100 last:border-0';d.innerHTML=`<div class="flex items-center"><button onclick="deleteExpense(${e.id})" class="mr-3 text-stone-200 hover:text-red-400"><i data-lucide="minus-circle" class="w-4 h-4"></i></button><span class="text-sm text-stone-700 font-medium">${e.note}</span></div><span class="font-mono text-stone-600 font-bold tracking-tight">¥${e.amt.toLocaleString()}</span>`;c.appendChild(d);});const tel=document.getElementById('total-expense');tel.innerText=showTWD?`NT$ ${Math.round(t*0.215).toLocaleString()}`:`¥ ${t.toLocaleString()}`;localStorage.setItem('osaka_expenses_2025',JSON.stringify(expenses));lucide.createIcons();}
+        function toggleTotalCurrency(){showTWD=!showTWD;renderExpenses();}
 
-        // --- INFO NOTES ---
-        let infoNotes = [];
-        function initInfoNotes() {
-            const saved = localStorage.getItem('osaka_notes_2025');
-            infoNotes = saved ? JSON.parse(saved) : [];
-            renderInfoNotes();
-        }
-        function renderInfoNotes() {
-            const list = document.getElementById('info-notes-list');
-            list.innerHTML = '';
-            infoNotes.forEach(note => {
-                const div = document.createElement('div');
-                div.className = 'flex justify-between items-center p-3 bg-stone-50 rounded-lg text-sm border border-stone-100 group';
-                div.innerHTML = `
-                    <span class="text-stone-700">${note.text}</span>
-                    <button onclick="deleteInfoNote(${note.id})" class="text-stone-300 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"><i data-lucide="x" class="w-4 h-4"></i></button>
-                `;
-                list.appendChild(div);
-            });
-            localStorage.setItem('osaka_notes_2025', JSON.stringify(infoNotes));
-            lucide.createIcons();
-        }
-        function addInfoNote() {
-            const val = document.getElementById('new-note-input').value;
-            if(!val) return;
-            infoNotes.push({ id: Date.now(), text: val });
-            document.getElementById('new-note-input').value = '';
-            renderInfoNotes();
-        }
-        function deleteInfoNote(id) {
-            infoNotes = infoNotes.filter(n => n.id !== id);
-            renderInfoNotes();
-        }
-
-        // --- LUGGAGE ---
-        let luggageData = [];
-        function initLuggage() {
-            const saved = localStorage.getItem('osaka_luggage_2025_v2');
-            luggageData = saved ? JSON.parse(saved) : [
-                { id: 1, text: '護照 (有效期限內)', checked: false },
-                { id: 2, text: 'Visit Japan Web QR', checked: false },
-                { id: 3, text: '網卡 / Wifi機', checked: false },
-                { id: 4, text: '日幣現金', checked: false }
-            ];
-            renderLuggage();
-        }
-        function renderLuggage() {
-            const container = document.getElementById('luggage-list');
-            container.innerHTML = '';
-            const done = luggageData.filter(i => i.checked).length;
-            document.getElementById('luggage-count').innerText = `${done}/${luggageData.length}`;
-            document.getElementById('progress-bar').style.width = luggageData.length ? (done/luggageData.length)*100 + '%' : '0%';
-            luggageData.forEach(item => {
-                const el = document.createElement('div');
-                el.className = 'flex items-center justify-between p-3 bg-white border border-stone-200 rounded-lg group hover:shadow-sm transition-all';
-                el.innerHTML = `
-                    <label class="flex items-center flex-1 cursor-pointer select-none">
-                        <input type="checkbox" class="w-5 h-5 rounded border-stone-300 text-stone-800 focus:ring-stone-500 mr-3" 
-                            ${item.checked ? 'checked' : ''} onchange="toggleLuggage(${item.id})">
-                        <span class="${item.checked ? 'line-through text-stone-300' : 'text-stone-700'} text-sm font-medium transition-colors">${item.text}</span>
-                    </label>
-                    <button onclick="deleteLuggage(${item.id})" class="opacity-0 group-hover:opacity-100 text-stone-300 hover:text-red-400 transition-all px-2"><i data-lucide="x" class="w-4 h-4"></i></button>
-                `;
-                container.appendChild(el);
-            });
-            lucide.createIcons();
-            localStorage.setItem('osaka_luggage_2025_v2', JSON.stringify(luggageData));
-        }
-        function toggleLuggage(id) { luggageData = luggageData.map(i => i.id === id ? {...i, checked: !i.checked} : i); renderLuggage(); }
-        function addLuggageItem() { const val = document.getElementById('new-luggage-item').value; if(val) { luggageData.push({id:Date.now(), text:val, checked:false}); document.getElementById('new-luggage-item').value=''; renderLuggage(); } }
-        function deleteLuggage(id) { luggageData = luggageData.filter(i => i.id !== id); renderLuggage(); }
-
-        // --- EXPENSES ---
-        let expenseList = [];
-        let showTotalInTWD = false;
-        function initExpenses() {
-            const saved = localStorage.getItem('osaka_expenses_2025');
-            if(saved) expenseList = JSON.parse(saved);
-            renderExpenses();
-        }
-        function calculateExchange() {
-            const jpy = parseFloat(document.getElementById('jpy-input').value) || 0;
-            document.getElementById('twd-output').innerText = Math.round(jpy * 0.215).toLocaleString();
-        }
-        function addExpense() {
-            const note = document.getElementById('expense-note').value;
-            const amt = parseInt(document.getElementById('expense-amt').value);
-            if(note && !isNaN(amt)) {
-                expenseList.unshift({ id: Date.now(), note, amt });
-                document.getElementById('expense-note').value = '';
-                document.getElementById('expense-amt').value = '';
-                renderExpenses();
-            }
-        }
-        function deleteExpense(id) { expenseList = expenseList.filter(e => e.id !== id); renderExpenses(); }
-        function renderExpenses() {
-            const container = document.getElementById('expense-list');
-            container.innerHTML = '';
-            let totalJPY = 0;
-            expenseList.forEach(e => {
-                totalJPY += e.amt;
-                const div = document.createElement('div');
-                div.className = 'flex justify-between items-center py-3 border-b border-stone-100 last:border-0';
-                div.innerHTML = `
-                    <div class="flex items-center">
-                        <button onclick="deleteExpense(${e.id})" class="mr-3 text-stone-200 hover:text-red-400"><i data-lucide="minus-circle" class="w-4 h-4"></i></button>
-                        <span class="text-sm text-stone-700 font-medium">${e.note}</span>
-                    </div>
-                    <span class="font-mono text-stone-600 font-bold tracking-tight">¥${e.amt.toLocaleString()}</span>
-                `;
-                container.appendChild(div);
-            });
-            const totalEl = document.getElementById('total-expense');
-            totalEl.innerText = showTotalInTWD ? `NT$ ${Math.round(totalJPY * 0.215).toLocaleString()}` : `¥ ${totalJPY.toLocaleString()}`;
-            totalEl.className = showTotalInTWD ? 'font-mono font-bold text-lg text-stone-500' : 'font-mono font-bold text-lg text-stone-800';
-            localStorage.setItem('osaka_expenses_2025', JSON.stringify(expenseList));
-            lucide.createIcons();
-        }
-        function toggleTotalCurrency() { showTotalInTWD = !showTotalInTWD; renderExpenses(); }
+        function initInfoNotes(){const s=localStorage.getItem('osaka_notes_2025');renderInfoNotes(s?JSON.parse(s):[]);}
+        function renderInfoNotes(n){const l=document.getElementById('info-notes-list');l.innerHTML='';n.forEach(note=>{const d=document.createElement('div');d.className='flex justify-between items-center p-3 bg-stone-50 rounded-lg text-sm border border-stone-100 group';d.innerHTML=`<span class="text-stone-700">${note.text}</span><button onclick="deleteInfoNote(${note.id})" class="text-stone-300 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"><i data-lucide="x" class="w-4 h-4"></i></button>`;l.appendChild(d);});lucide.createIcons();}
+        function addInfoNote(){const v=document.getElementById('new-note-input').value;if(!v)return;const s=localStorage.getItem('osaka_notes_2025');const n=s?JSON.parse(s):[];n.push({id:Date.now(),text:v});localStorage.setItem('osaka_notes_2025',JSON.stringify(n));document.getElementById('new-note-input').value='';renderInfoNotes(n);}
+        function deleteInfoNote(id){const s=localStorage.getItem('osaka_notes_2025');let n=s?JSON.parse(s):[];n=n.filter(x=>x.id!==id);localStorage.setItem('osaka_notes_2025',JSON.stringify(n));renderInfoNotes(n);}
+        function openZoomCard(t,j,r){document.getElementById('zoom-modal').classList.remove('hidden');document.getElementById('zoom-modal').classList.add('flex');document.getElementById('zoom-title').innerText=t;document.getElementById('zoom-jp').innerHTML=j;document.getElementById('zoom-ro').innerText=r;}
+        function closeZoomCard(){document.getElementById('zoom-modal').classList.add('hidden');document.getElementById('zoom-modal').classList.remove('flex');}
+        function handleMapUpload(e){const f=e.target.files[0];if(f){const r=new FileReader();r.onload=function(evt){document.getElementById('user-map-img').src=evt.target.result;};r.readAsDataURL(f);}}
     </script>
 </body>
 </html>
-
-
