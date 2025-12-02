@@ -10,7 +10,9 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#F5F5F4">
 
-    <!-- Icons: Removed as requested to use system default -->
+    <!-- Icons: Minimalist Black Heart for Browser Tab & PWA -->
+    <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iYmxhY2siPjxwYXRoIGQ9Ik0xMiAyMS4zNWwtMS40NS0xLjMyQzUuNCAxNS4zNiAyIDEyLjI4IDIgOC41IDIgNS40MiA0LjQyIDMgNy41IDNjMS43NCAwIDMuNDEuODEgNC41IDIuMDlDMTMuMDkgMy44MSAxNC43NiAzIDE2LjUgM2MxOS41OCAzIDIyIDUuNDIgMjIgOC41YzAgMy43OC0zLjQgNi44Ni04LjU1IDExLjU0TDEyIDIxLjM1eiIvPjwvc3ZnPg==" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iYmxhY2siPjxwYXRoIGQ9Ik0xMiAyMS4zNWwtMS40NS0xLjMyQzUuNCAxNS4zNiAyIDEyLjI4IDIgOC41IDIgNS40MiA0LjQyIDMgNy41IDNjMS43NCAwIDMuNDEuODEgNC41IDIuMDlDMTMuMDkgMy44MSAxNC43NiAzIDE2LjUgM2MxOS41OCAzIDIyIDUuNDIgMjIgOC41YzAgMy43OC0zLjQgNi44Ni04LjU1IDExLjU0TDEyIDIxLjM1eiIvPjwvc3ZnPg==">
 
     <!-- Libraries -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -317,6 +319,9 @@
                              <i data-lucide="upload" class="w-3 h-3 mr-1"></i> 匯入還原
                          </label>
                      </div>
+                     <button onclick="resetItineraryData()" class="w-full py-2 bg-red-100 border border-red-300 rounded-lg text-xs font-bold text-red-700 flex items-center justify-center hover:bg-red-200 mt-3">
+                         <i data-lucide="alert-triangle" class="w-3 h-3 mr-1"></i> 重設所有行程資料
+                     </button>
                  </div>
             </div>
         </div>
@@ -463,13 +468,15 @@
         let currentUser = null;
         let tempShopImg = null;
 
-        // DEFAULT DATA
+        // DEFAULT DATA - ONLY FLIGHTS KEPT HERE AS REQUESTED
         const DEFAULT_ITINERARY = [
-            { id: 'd1_1', day: 0, time: '15:25', title: 'KHH 高雄起飛 (CI 176)', type: 'flight', location: '高雄小港機場', lat: 22.57, lng: 120.35, note: '航廈 2, 提早2小時報到' },
-            { id: 'd1_2', day: 0, time: '19:10', title: '抵達關西機場 (KIX)', type: 'flight', location: '關西國際機場', lat: 34.434, lng: 135.235, note: '入境審查預計 1 小時' },
-            { id: 'd1_3', day: 0, time: '20:30', title: '前往飯店 Check-in', type: 'spot', location: 'Ostay Vermillion Kitahama', lat: 34.691, lng: 135.506, note: '訂房代號: #882233' },
-            { id: 'd2_1', day: 1, time: '10:00', title: '大阪城公園', type: 'spot', location: '大阪城公園', lat: 34.687, lng: 135.526 },
-            { id: 'd2_2', day: 1, time: '12:00', title: '午餐: 大阪城周邊', type: 'food', location: 'Jo-Terrace Osaka', lat: 34.689, lng: 135.531 }
+            // Day 1: Arrival (Index 0) - Only flights
+            { id: 'd1_1', day: 0, time: '15:25', title: 'KHH 高雄起飛 (CI 176)', type: 'flight', location: '高雄小港機場', lat: 22.57, lng: 120.35, note: '航廈 2, 預計13:25報到' },
+            { id: 'd1_2', day: 0, time: '19:10', title: '抵達關西機場 (KIX)', type: 'flight', location: '關西國際機場', lat: 34.434, lng: 135.235, note: '預計 19:40 開始入境審查' },
+            
+            // Day 6: Departure (Index 5) - Only flights
+            { id: 'd6_2', day: 5, time: '20:10', title: 'KIX 關西機場起飛 (CI 177)', type: 'flight', location: '關西國際機場', lat: 34.434, lng: 135.235, note: '提早 2 小時報到' },
+            { id: 'd6_3', day: 5, time: '22:45', title: '抵達高雄 (KHH)', type: 'flight', location: '高雄小港機場', lat: 22.57, lng: 120.35, note: '結束愉快的旅程!' }
         ];
 
         // INIT
@@ -495,7 +502,7 @@
             
             setTimeout(() => {
                 try {
-                    // ... map logic
+                    // Initialize Map Picker on modal opening
                 } catch(e) { console.warn("Map err", e); }
             }, 1000);
 
@@ -619,6 +626,45 @@
             document.body.removeChild(temp);
             alert("地址已複製！");
         }
+
+        async function resetItineraryData() {
+            if (!confirm('警告：確定要清空所有行程資料嗎？這將無法復原，但可以解決舊行程刪不掉的問題。')) return;
+
+            // Clear local storage flag to allow re-seeding
+            localStorage.removeItem('osaka_itinerary_seeded');
+            
+            // Clear local data array
+            itineraryData = [];
+            renderItineraryList();
+
+            try {
+                if (db) {
+                    const collectionRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('itinerary');
+                    // Fetch all docs and delete them one by one (Firestore doesn't have a single clear command)
+                    const snapshot = await collectionRef.get();
+                    if (snapshot.size === 0) {
+                        alert('行程資料已清空。App 將自動重新載入預設行程。');
+                        location.reload();
+                        return;
+                    }
+
+                    const batch = db.batch();
+                    snapshot.docs.forEach(doc => {
+                        batch.delete(doc.ref);
+                    });
+                    await batch.commit();
+
+                    alert('行程資料已清空並重設成功。');
+                    location.reload();
+                } else {
+                    throw new Error("Firebase not connected.");
+                }
+            } catch (e) {
+                console.error("Reset failed", e);
+                alert('重設失敗，請檢查網路連線或稍後在 Firebase 後台手動刪除。');
+            }
+        }
+
 
         // --- SYNC LISTENERS ---
         function setupSyncListeners() {
@@ -1040,12 +1086,27 @@
         function updateWeatherHighlight(idx){document.querySelectorAll('.weather-card').forEach((el,i)=>{if(i===idx){el.classList.add('bg-white','border-stone-300','shadow-sm','scale-105');el.classList.remove('bg-transparent','border-transparent','opacity-60');}else{el.classList.remove('bg-white','border-stone-300','shadow-sm','scale-105');el.classList.add('bg-transparent','border-transparent','opacity-60');}});}
         function openAddModal(){document.getElementById('add-modal').classList.remove('hidden');document.getElementById('new-day').value=currentDayIndex;document.getElementById('modal-title').innerText="新增行程";document.getElementById('modal-btn-text').innerText="確認新增";document.getElementById('edit-id').value="";document.getElementById('new-title').value="";document.getElementById('new-location').value="";document.getElementById('new-time').value="";document.getElementById('new-note').value="";document.getElementById('new-lat').value="";document.getElementById('new-lng').value="";
             if(pickerMarker) pickerMarker.remove();
-            setTimeout(()=>{ pickerMap.invalidateSize(); pickerMap.setView([34.6937, 135.5023], 13); }, 200);
+            setTimeout(()=>{ 
+                if(!pickerMap) {
+                    // Initialize Map Picker on modal opening
+                    pickerMap=L.map('picker-map').setView([34.6937, 135.5023], 13);
+                    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{attribution:'&copy; OSM',maxZoom:19}).addTo(pickerMap);
+                    pickerMap.on('click', (e) => {
+                        if(pickerMarker) pickerMarker.remove();
+                        pickerMarker = L.marker(e.latlng).addTo(pickerMap);
+                        document.getElementById('new-lat').value = e.latlng.lat.toFixed(6);
+                        document.getElementById('new-lng').value = e.latlng.lng.toFixed(6);
+                    });
+                }
+                pickerMap.invalidateSize(); 
+                pickerMap.setView([34.6937, 135.5023], 13); 
+            }, 200);
         }
         function openEditModal(id){const item=itineraryData.find(i=>i.id===id);if(!item)return;document.getElementById('add-modal').classList.remove('hidden');document.getElementById('modal-title').innerText="修改行程";document.getElementById('modal-btn-text').innerText="儲存修改";document.getElementById('edit-id').value=id;document.getElementById('new-title').value=item.title;document.getElementById('new-location').value=item.location||"";document.getElementById('new-time').value=item.time;document.getElementById('new-day').value=item.day;document.getElementById('new-note').value=item.note||"";
             const radios=document.getElementsByName('new-type');for(let r of radios){if(r.value===item.type)r.checked=true;}
             // Set map
             setTimeout(()=>{ 
+                if(!pickerMap) openAddModal(); // Ensure map is initialized
                 pickerMap.invalidateSize(); 
                 if(item.lat && item.lng) {
                     if(pickerMarker) pickerMarker.remove();
