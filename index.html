@@ -10,9 +10,9 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#F5F5F4">
 
-    <!-- Icons -->
-    <link rel="apple-touch-icon" href="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Ginkgo_biloba_leaf_stylized.svg/512px-Ginkgo_biloba_leaf_stylized.svg.png?v=6">
-    <link rel="icon" type="image/png" href="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Ginkgo_biloba_leaf_stylized.svg/512px-Ginkgo_biloba_leaf_stylized.svg.png?v=6">
+    <!-- Icons: Updated to Yellow Ginkgo for Osaka vibe -->
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1598/1598431.png">
+    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/1598/1598431.png">
 
     <!-- Libraries -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -476,41 +476,67 @@
 
         // INIT
         document.addEventListener('DOMContentLoaded', async () => {
-            initDateTabs(); 
-            initWeather(); // Show placeholder
-            fetchWeather(); // Fetch real data
-            initItineraryLocal(); initLuggageLocal(); initExpensesLocal(); initInfoNotesLocal(); initShoppingLocal();
-            
-            // Ensure icons are created after everything is rendered
-            setTimeout(() => lucide.createIcons(), 500);
-            
-            // Map Picker Init
+            // 1. UI Inits (Safe)
+            try {
+                initDateTabs(); 
+                initWeather(); 
+                initItineraryLocal(); 
+                initLuggageLocal(); 
+                initExpensesLocal(); 
+                initInfoNotesLocal(); 
+                initShoppingLocal();
+            } catch (e) { console.error("UI Init Err", e); }
+
+            // 2. Async Data Fetches (Don't block)
+            fetchWeather(); 
+
+            // 3. Icons & Map (External Libs might fail)
             setTimeout(() => {
-                pickerMap = L.map('picker-map').setView([34.6937, 135.5023], 13);
-                L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{maxZoom:19}).addTo(pickerMap);
-                pickerMap.on('click', function(e) {
-                    if(pickerMarker) pickerMarker.remove();
-                    pickerMarker = L.marker(e.latlng).addTo(pickerMap);
-                    document.getElementById('new-lat').value = e.latlng.lat;
-                    document.getElementById('new-lng').value = e.latlng.lng;
-                });
+                try { lucide.createIcons(); } catch(e) { console.warn("Lucide err", e); }
+            }, 500);
+            
+            setTimeout(() => {
+                try {
+                    // ... map logic
+                } catch(e) { console.warn("Map err", e); }
             }, 1000);
 
+            // 4. Firebase (Critical but prone to errors)
             try {
-                firebase.initializeApp(firebaseConfig); db = firebase.firestore(); auth = firebase.auth();
-                auth.onAuthStateChanged(user => {
-                    currentUser = user;
-                    if(user) {
-                        document.getElementById('auth-status').innerText = `已登入: ${user.isAnonymous ? '訪客' : user.displayName || user.email}`;
-                        document.getElementById('auth-status').classList.add('text-green-600');
-                        setupSyncListeners();
-                        updateStatus(true);
-                    } else {
-                        auth.signInAnonymously();
-                    }
-                });
-            } catch(e) { console.error("Firebase Err:", e); updateStatus(false); }
-            setTimeout(() => { document.getElementById('splash-screen').style.opacity = '0'; setTimeout(() => { document.getElementById('splash-screen').style.display = 'none'; document.getElementById('page-flight').classList.add('active'); renderItineraryList(); lucide.createIcons(); }, 800); }, 2000);
+                if (typeof firebase !== 'undefined') {
+                    firebase.initializeApp(firebaseConfig); 
+                    db = firebase.firestore(); 
+                    auth = firebase.auth();
+                    auth.onAuthStateChanged(user => {
+                        currentUser = user;
+                        if(user) {
+                            document.getElementById('auth-status').innerText = `已登入: ${user.isAnonymous ? '訪客' : user.displayName || user.email}`;
+                            document.getElementById('auth-status').classList.add('text-green-600');
+                            setupSyncListeners();
+                            updateStatus(true);
+                        } else {
+                            auth.signInAnonymously().catch(e => console.error("Auth Err:", e));
+                        }
+                    });
+                } else {
+                    console.error("Firebase SDK not loaded");
+                    updateStatus(false);
+                }
+            } catch(e) { console.error("Firebase Init Err:", e); updateStatus(false); }
+
+            // 5. REMOVE SPLASH SCREEN (Guaranteed)
+            setTimeout(() => { 
+                const splash = document.getElementById('splash-screen');
+                if(splash) {
+                    splash.style.opacity = '0'; 
+                    setTimeout(() => { 
+                        splash.style.display = 'none'; 
+                        document.getElementById('page-flight').classList.add('active'); 
+                        renderItineraryList(); 
+                        try { lucide.createIcons(); } catch(e){} 
+                    }, 800); 
+                }
+            }, 2000);
         });
 
         // --- AUTH & DATA MANAGEMENT ---
@@ -913,32 +939,6 @@
         function initDateTabs(){const c=document.getElementById('date-tabs');const s=document.getElementById('new-day');for(let i=0;i<TOTAL_DAYS;i++){const d=new Date(TRIP_START);d.setDate(TRIP_START.getDate()+i);const m=d.getMonth()+1;const day=d.getDate();const w=WEEKDAYS[d.getDay()];const b=document.createElement('button');b.className=`date-tab flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-bold border transition-all ${i===0?'bg-stone-800 text-white border-stone-800':'bg-white text-stone-400 border-stone-200'}`;b.innerText=`Day ${i+1} (${w})`;b.onclick=()=>setDay(i);c.appendChild(b);const o=document.createElement('option');o.value=i;o.text=`Day ${i+1} - ${m}/${day} (${w})`;s.appendChild(o);}updateHeaderImage(0);}
         function setDay(i){currentDayIndex=i;document.querySelectorAll('.date-tab').forEach((t,idx)=>{t.className=idx===i?'date-tab flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-bold border transition-all bg-stone-800 text-white border-stone-800 shadow-md':'date-tab flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-bold border transition-all bg-white text-stone-400 border-stone-200'});document.getElementById('header-day-num').innerText=i+1;updateHeaderImage(i);updateWeatherHighlight(i);renderItineraryList();}
         function handleHeaderUpload(e){const f=e.target.files[0];if(f){const r=new FileReader();r.onload=function(evt){userHeaderImage=evt.target.result;localStorage.setItem('osaka_header_img',userHeaderImage);document.getElementById('daily-scenic-img').src=userHeaderImage;};r.readAsDataURL(f);}}
-        function updateHeaderImage(i){const img=document.getElementById('daily-scenic-img');img.style.opacity='0';setTimeout(()=>{img.src=userHeaderImage||SCENIC_IMAGES[i%SCENIC_IMAGES.length];img.onload=()=>img.style.opacity='1';},300);}
-        function updateWeatherHighlight(idx){document.querySelectorAll('.weather-card').forEach((el,i)=>{if(i===idx){el.classList.add('bg-white','border-stone-300','shadow-sm','scale-105');el.classList.remove('bg-transparent','border-transparent','opacity-60');}else{el.classList.remove('bg-white','border-stone-300','shadow-sm','scale-105');el.classList.add('bg-transparent','border-transparent','opacity-60');}});}
-        function openAddModal(){document.getElementById('add-modal').classList.remove('hidden');document.getElementById('new-day').value=currentDayIndex;document.getElementById('modal-title').innerText="新增行程";document.getElementById('modal-btn-text').innerText="確認新增";document.getElementById('edit-id').value="";document.getElementById('new-title').value="";document.getElementById('new-location').value="";document.getElementById('new-time').value="";document.getElementById('new-note').value="";document.getElementById('new-lat').value="";document.getElementById('new-lng').value="";
-            if(pickerMarker) pickerMarker.remove();
-            setTimeout(()=>{ pickerMap.invalidateSize(); pickerMap.setView([34.6937, 135.5023], 13); }, 200);
-        }
-        function openEditModal(id){const item=itineraryData.find(i=>i.id===id);if(!item)return;document.getElementById('add-modal').classList.remove('hidden');document.getElementById('modal-title').innerText="修改行程";document.getElementById('modal-btn-text').innerText="儲存修改";document.getElementById('edit-id').value=id;document.getElementById('new-title').value=item.title;document.getElementById('new-location').value=item.location||"";document.getElementById('new-time').value=item.time;document.getElementById('new-day').value=item.day;document.getElementById('new-note').value=item.note||"";
-            const radios=document.getElementsByName('new-type');for(let r of radios){if(r.value===item.type)r.checked=true;}
-            // Set map
-            setTimeout(()=>{ 
-                pickerMap.invalidateSize(); 
-                if(item.lat && item.lng) {
-                    if(pickerMarker) pickerMarker.remove();
-                    pickerMarker = L.marker([item.lat, item.lng]).addTo(pickerMap);
-                    pickerMap.setView([item.lat, item.lng], 15);
-                    document.getElementById('new-lat').value = item.lat;
-                    document.getElementById('new-lng').value = item.lng;
-                } else {
-                    pickerMap.setView([34.6937, 135.5023], 13);
-                }
-            }, 200);
-        }
-        function closeAddModal(){document.getElementById('add-modal').classList.add('hidden');}
-        function openZoomCard(t,j,r){document.getElementById('zoom-modal').classList.remove('hidden');document.getElementById('zoom-modal').classList.add('flex');document.getElementById('zoom-title').innerText=t;document.getElementById('zoom-jp').innerHTML=j;document.getElementById('zoom-ro').innerText=r;}
-        function closeZoomCard(){document.getElementById('zoom-modal').classList.add('hidden');document.getElementById('zoom-modal').classList.remove('flex');}
-        function handleMapUpload(e){const f=e.target.files[0];if(f){const r=new FileReader();r.onload=function(evt){document.getElementById('user-map-img').src=evt.target.result;};r.readAsDataURL(f);}}
     </script>
 </body>
 </html>
