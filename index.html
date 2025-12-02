@@ -302,7 +302,7 @@
                 <div class="grid grid-cols-2 gap-3 mt-3"><a href="tel:110" class="flex items-center p-3 bg-white border border-red-100 rounded-xl shadow-sm active:bg-red-50"><div class="bg-red-100 p-2 rounded-full mr-3"><i data-lucide="phone" class="w-4 h-4 text-red-600"></i></div><span class="font-bold text-sm text-stone-800">報警 110</span></a><a href="tel:119" class="flex items-center p-3 bg-white border border-green-100 rounded-xl shadow-sm active:bg-green-50"><div class="bg-green-100 p-2 rounded-full mr-3"><i data-lucide="ambulance" class="w-4 h-4 text-green-600"></i></div><span class="font-bold text-sm text-stone-800">急救 119</span></a></div>
             </div>
 
-            <!-- Account & Sync Section -->
+            <!-- Account & Sync Section (Visual Fixes Applied Here) -->
             <div class="bg-white rounded-xl border border-stone-200 p-4 shadow-sm mb-8">
                  <h3 class="text-sm font-bold text-stone-800 mb-3 flex items-center"><i data-lucide="cloud" class="w-4 h-4 mr-2"></i> 資料同步與備份</h3>
                  <div class="flex flex-col gap-2">
@@ -319,8 +319,9 @@
                              <i data-lucide="upload" class="w-3 h-3 mr-1"></i> 匯入還原
                          </label>
                      </div>
-                     <button onclick="resetItineraryData()" class="w-full py-2 bg-red-100 border border-red-300 rounded-lg text-xs font-bold text-red-700 flex items-center justify-center hover:bg-red-200 mt-3">
-                         <i data-lucide="alert-triangle" class="w-3 h-3 mr-1"></i> 重設所有行程資料
+                     <div class="w-full h-px bg-red-100 mt-4 mb-2"></div> <!-- New separator for emphasis -->
+                     <button onclick="resetItineraryData()" class="w-full py-3 bg-red-100 border border-red-300 rounded-lg text-sm font-bold text-red-700 flex items-center justify-center hover:bg-red-200">
+                         <i data-lucide="alert-triangle" class="w-4 h-4 mr-1"></i> 重設所有行程資料
                      </button>
                  </div>
             </div>
