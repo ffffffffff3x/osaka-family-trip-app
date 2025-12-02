@@ -11,18 +11,21 @@
         :root {
             --main-color: #955f47;
             --text-color: #382414;
+            --white-bg: #ffffff;
+            --light-bg: #f8f8f8;
         }
 
         body {
             font-family: 'Helvetica Neue', Arial, sans-serif;
-            background-color: #f8f8f8;
+            background-color: var(--light-bg);
             color: var(--text-color);
             margin: 0;
             padding: 0;
-            padding-top: 95px; /* 留給固定導航欄的空間 */
+            padding-top: 130px; /* **重要：容納兩行導航** */
             display: flex;
             flex-direction: column;
             align-items: center;
+            font-size: 14px; /* **整體微調縮小** */
         }
         
         /* ----- 固定導航欄樣式 (與 flight.html 一致) ----- */
@@ -32,56 +35,463 @@
             position: fixed;
             top: 0;
             z-index: 1000;
-            background-color: var(--main-color);
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            background-color: var(--white-bg); /* 白底 */
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
         }
-        .main-title {
-            color: white;
-            padding: 10px 20px;
-            font-size: 20px;
-            font-weight: bold;
-            text-align: center;
-        }
-        .nav-bar-wrapper {
+        
+        .simple-title-bar {
+            padding: 8px 15px; /* 縮小 Padding */
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            background-color: var(--text-color);
-            padding: 5px 0;
-            justify-content: center;
         }
+
+        .simple-title-text {
+            text-align: center;
+            flex-grow: 1;
+        }
+
+        .simple-title-text h1 {
+            color: var(--main-color);
+            font-size: 17px;
+            margin: 0;
+            line-height: 1.2;
+        }
+        
+        .simple-title-text p {
+            color: #666;
+            font-size: 12px;
+            margin: 0;
+        }
+
+        .simple-title-bar a {
+            color: var(--text-color);
+            text-decoration: none;
+            font-size: 18px;
+            margin: 0 5px;
+        }
+
+        /* 日期導航條 - 模擬 flight.html 的日期空間 */
+        .date-nav-wrapper {
+            display: flex;
+            overflow-x: auto;
+            white-space: nowrap;
+            padding: 5px 10px;
+            border-bottom: 1px solid #ddd;
+            height: 40px; /* 確保高度一致 */
+        }
+        
+        /* 功能導航條 - 獨立一行，極簡 ICON */
+        .function-nav-wrapper {
+            background-color: var(--white-bg);
+            padding: 5px 10px 10px 10px;
+            border-bottom: 1px solid #eee;
+        }
+        
         .function-tabs {
             display: flex;
-            justify-content: center;
+            justify-content: space-around;
             width: 100%;
         }
+        
         .function-tab {
-            padding: 8px 15px;
-            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 5px 8px; 
+            color: var(--text-color);
             text-decoration: none;
-            font-size: 14px;
-            font-weight: bold;
-            transition: background-color 0.2s;
+            font-size: 11px; 
+            font-weight: 500;
         }
+
         .function-tab.active {
-            background-color: rgba(255, 255, 255, 0.15);
-            border-radius: 4px;
+            color: var(--main-color);
         }
+
+        .function-icon {
+            font-size: 20px; 
+            margin-bottom: 2px;
+            line-height: 1;
+        }
+        
         /* ----------------------------------------------- */
 
 
         .content {
             width: 100%;
             max-width: 600px;
-            padding: 20px;
+            padding: 15px; /* 縮小 Padding */
         }
 
         /* 總覽與篩選區塊 */
-        .summary-box { background-color: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05); margin-bottom: 20px; }
-        .total-display { text-align: center; margin-bottom: 20px; }
-        .total-display h2 { font-size: 16px; color: #666; margin-bottom: 5px; }
-        .total-amount { font-size: 38px; font-weight: bold; color: var(--text-color); }
-        .filter-buttons { display: flex; justify-content: center; gap: 10px; margin-bottom: 10px; }
-        .filter-btn { background-color: #f0f0f0; color: var(--text-color); border: 1px solid #ddd; border-radius: 50%; width: 40px; height: 40px; display: flex; justify-content: center; align-items: center; font-weight: bold; cursor: pointer; transition: background-color 0.2s; }
+        .summary-box { background-color: white; padding: 15px; border-radius: 10px; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05); margin-bottom: 15px; }
+        .total-display { text-align: center; margin-bottom: 15px; }
+        .total-display h2 { font-size: 14px; color: #666; margin-bottom: 3px; }
+        .total-amount { font-size: 32px; font-weight: bold; color: var(--text-color); }
+        .filter-buttons { display: flex; justify-content: center; gap: 8px; margin-bottom: 8px; }
+        .filter-btn { background-color: #f0f0f0; color: var(--text-color); border: 1px solid #ddd; border-radius: 50%; width: 35px; height: 35px; display: flex; justify-content: center; align-items: center; font-weight: bold; cursor: pointer; transition: background-color 0.2s; font-size: 13px; }
         .filter-btn.active { background-color: var(--main-color); color: white; }
 
-        /* 記帳
+        /* 記帳列表樣式 */
+        .account-item { background-color: white; padding: 12px 0; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        .account-details { flex-grow: 1; }
+        .account-name { font-size: 15px; font-weight: 500; }
+        .status-tags { font-size: 11px; margin-top: 3px; }
+        .tag-payer, .tag-status { display: inline-block; padding: 1px 4px; border-radius: 3px; font-weight: bold; margin-right: 4px; }
+        .tag-payer { background-color: #D7C49E; color: var(--text-color); }
+        .tag-paid { background-color: #e6f7d5; color: #5cb85c; }
+        .tag-unpaid { background-color: #ffe8e8; color: #f0ad4e; }
+
+        .account-amount { font-size: 18px; font-weight: bold; color: var(--text-color); }
+
+        /* 底部按鈕與彈窗樣式 */
+        .add-button-container { width: 100%; max-width: 600px; padding: 15px; position: fixed; bottom: 0; background-color: var(--light-bg); border-top: 1px solid #ddd; text-align: center; z-index: 100; }
+        #addButton { width: 90%; padding: 12px; background-color: var(--text-color); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; }
+
+        .modal { display: none; position: fixed; z-index: 200; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4); }
+        .modal-content { background-color: #fefefe; width: 100%; max-width: 600px; position: absolute; bottom: 0; box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2); border-top-left-radius: 10px; border-top-right-radius: 10px; padding: 15px; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid #eee; padding-bottom: 8px;}
+        .modal-close { color: #aaa; font-size: 24px; font-weight: bold; cursor: pointer; }
+        
+        .input-form-group { margin-bottom: 15px; }
+        .input-form-group label { display: block; font-size: 13px; color: #666; margin-bottom: 4px; }
+        
+        .amount-group { display: flex; align-items: center; border: 1px solid #ddd; border-radius: 4px; }
+        .amount-group input { border: none !important; padding: 8px; font-size: 20px !important; flex-grow: 1; }
+        .currency-label { padding: 0 8px; font-size: 16px; color: var(--main-color); font-weight: bold; border-left: 1px solid #ddd; }
+        
+        .conversion-tip { font-size: 13px; color: #007bff; margin-top: 4px; text-align: right; }
+
+        /* 換匯計算器獨立樣式 */
+        .rate-calc-box {
+            text-align: center;
+            padding: 25px 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            background-color: white;
+            margin-bottom: 15px;
+        }
+
+        #jpyInputRate {
+            width: 80%;
+            padding: 10px;
+            font-size: 24px;
+            text-align: center;
+            border: 2px solid var(--main-color);
+            border-radius: 6px;
+            margin-bottom: 15px;
+            color: var(--text-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="fixed-nav-header">
+        <div class="simple-title-bar">
+            <a href="index.html">✕</a> 
+            <div class="simple-title-text">
+                <h1>OSAKA FAMILY TRIP</h1>
+                <p>大阪旅遊 2026</p>
+            </div>
+            <a href="info.html">ⓘ</a>
+        </div>
+        
+        <div class="date-nav-wrapper">
+             </div>
+
+        <div class="function-nav-wrapper">
+            <div class="function-tabs">
+                <a href="flight.html" class="function-tab">
+                    <span class="function-icon">📅</span>
+                    <span>行程</span>
+                </a>
+                <a href="checklist.html" class="function-tab">
+                    <span class="function-icon">🧳</span>
+                    <span>行李</span>
+                </a>
+                <a href="exchange.html?mode=rate" id="rateTab" class="function-tab">
+                    <span class="function-icon">💴</span>
+                    <span>換匯</span>
+                </a>
+                <a href="exchange.html?mode=budget" id="budgetTab" class="function-tab">
+                    <span class="function-icon">🧾</span>
+                    <span>記帳</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="content" id="content">
+        </div>
+
+    <div class="add-button-container" id="addButtonContainer" style="display:none;">
+        <button id="addButton">＋ 記一筆</button>
+    </div>
+
+    <div id="expenseModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>新增款項</h2>
+                <span class="modal-close" id="closeModal">&times;</span>
+            </div>
+            
+            <form id="expenseForm">
+                <div class="input-form-group">
+                    <label for="itemName">項目名稱 (例如：超商零食)</label>
+                    <input type="text" id="itemName" placeholder="必填" required>
+                </div>
+
+                <div class="input-form-group">
+                    <label for="jpyAmount">日幣金額</label>
+                    <div class="amount-group">
+                        <input type="number" id="jpyAmount" placeholder="0" required>
+                        <span class="currency-label">JPY</span>
+                    </div>
+                    <div class="conversion-tip" id="twdConversion">約等於台幣 (TWD): 0</div>
+                </div>
+                
+                <div class="input-form-group">
+                    <label>付款人 (未來可點選頭像)</label>
+                    <input type="text" value="K" disabled> 
+                </div>
+
+                <button type="submit" style="width: 100%; padding: 10px; background-color: var(--main-color); color: white; border: none; border-radius: 6px; font-size: 14px; margin-top: 10px;">儲存至雲端</button>
+            </form>
+        </div>
+    </div>
+
+
+    <script>
+        // ----------------------------------------------------
+        // 【雲端配置區】請勿更動下方結構
+        // ----------------------------------------------------
+        const firebaseConfig = {
+            apiKey: "AIzaSyBGmvolsS8AgPfm09qynSVIz5GOcvXDKCM",
+            authDomain: "osaka-family-trip.firebaseapp.com",
+            databaseURL: "https://osaka-family-trip-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "osaka-family-trip",
+            storageBucket: "osaka-family-trip.firebasestorage.app",
+            messagingSenderId: "303743481222",
+            appId: "1:303743481222:web:e3e4ecb51ff89a3acfe807"
+        };
+        
+        // --- 初始化 Firebase ---
+        try {
+            firebase.initializeApp(firebaseConfig);
+            const database = firebase.database();
+            const todoRef = database.ref('travel_budget'); 
+        } catch (error) {
+            console.error("Firebase Initialization Error:", error);
+        }
+        // ----------------------------------------------------
+        
+        let currentFilter = 'All'; 
+        const currentRate = 0.22; 
+        const pageTitle = document.getElementById('pageTitle');
+        const contentDiv = document.getElementById('content');
+        const addButtonContainer = document.getElementById('addButtonContainer');
+        const urlParams = new URLSearchParams(window.location.search);
+        const mode = urlParams.get('mode') || 'rate'; 
+
+        const rateTab = document.getElementById('rateTab');
+        const budgetTab = document.getElementById('budgetTab');
+        
+        // 根據 URL 參數啟用當前頁面的 Active 樣式
+        if (mode === 'budget') {
+            rateTab.classList.remove('active');
+            budgetTab.classList.add('active');
+        } else {
+            rateTab.classList.add('active');
+            budgetTab.classList.remove('active');
+        }
+
+
+        // ----------------------------------------------------
+        // 記帳列表渲染與邏輯
+        // ----------------------------------------------------
+        function renderBudgetList() {
+            pageTitle.textContent = '旅遊記帳本';
+            addButtonContainer.style.display = 'flex';
+            
+            contentDiv.innerHTML = `
+                <div class="summary-box">
+                    <div class="total-display">
+                        <h2>總金額 (台幣)</h2>
+                        <div class="total-amount" id="totalAmount">載入中...</div>
+                    </div>
+                    <div class="filter-buttons" id="filterButtons">
+                        <button class="filter-btn active" data-filter="All">全</button>
+                        <button class="filter-btn" data-filter="K">K</button>
+                        <button class="filter-btn" data-filter="M">M</button>
+                        <button class="filter-btn" data-filter="E">E</button>
+                        <button class="filter-btn" data-filter="J">J</button>
+                    </div>
+                </div>
+                <div class="list-container" id="accountList"></div>
+            `;
+            
+            const accountList = document.getElementById('accountList');
+            const filterButtons = document.querySelectorAll('.filter-btn');
+            
+            function updateDisplay(items) {
+                accountList.innerHTML = '';
+                
+                const itemsArray = items ? Object.keys(items).map(key => ({ ...items[key], key })).reverse() : [];
+                const filteredData = itemsArray.filter(item => {
+                    return currentFilter === 'All' || item.payer === currentFilter;
+                });
+
+                const total = filteredData.reduce((sum, item) => sum + item.amountTWD, 0);
+                document.getElementById('totalAmount').textContent = `$${total.toLocaleString('en-US')}`;
+
+                filteredData.forEach(item => {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = 'account-item';
+                    
+                    const statusTagClass = item.paid ? 'tag-paid' : 'tag-unpaid';
+                    const statusText = item.paid ? '已付' : '未付';
+
+                    itemDiv.innerHTML = `
+                        <div class="account-details">
+                            <div class="account-name">${item.name}</div>
+                            <div class="status-tags">
+                                <span class="tag-payer">${item.payer}</span>
+                                <span class="tag-status ${statusTagClass}">${statusText}</span>
+                            </div>
+                        </div>
+                        <div class="account-amount">$${item.amountTWD.toLocaleString('en-US')}</div>
+                    `;
+                    accountList.appendChild(itemDiv);
+                });
+
+                if (filteredData.length === 0) {
+                    accountList.innerHTML = '<div style="text-align:center; padding: 40px; color:#999;">目前沒有任何開銷紀錄</div>';
+                }
+            }
+            
+            // 監聽 Firebase 數據變化 (雲端同步核心)
+            if (typeof database !== 'undefined') { // 確保 Firebase 已初始化
+                todoRef.on('value', (snapshot) => {
+                    const items = snapshot.val();
+                    updateDisplay(items);
+                });
+            } else {
+                 document.getElementById('totalAmount').textContent = '未連線';
+                 accountList.innerHTML = '<div style="text-align:center; padding: 40px; color:red;">無法連接 Firebase，請檢查規則和配置碼！</div>';
+            }
+            
+
+            filterButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    filterButtons.forEach(btn => btn.classList.remove('active'));
+                    currentFilter = button.dataset.filter;
+                    button.classList.add('active');
+                    // 重新觸發顯示
+                    if (typeof database !== 'undefined') {
+                        todoRef.once('value').then(snapshot => {
+                            updateDisplay(snapshot.val());
+                        });
+                    }
+                });
+            });
+        }
+        
+        // ----------------------------------------------------
+        // JPY 換算與儲存邏輯 (核心功能)
+        // ----------------------------------------------------
+        const expenseModal = document.getElementById('expenseModal');
+        const twdConversionDiv = document.getElementById('twdConversion');
+        const jpyAmountInput = document.getElementById('jpyAmount');
+        const expenseForm = document.getElementById('expenseForm');
+        
+        jpyAmountInput.addEventListener('input', () => {
+            const jpyAmount = parseFloat(jpyAmountInput.value) || 0;
+            const twdAmount = (jpyAmount * currentRate);
+            twdConversionDiv.textContent = `約等於台幣 (TWD): ${Math.round(twdAmount).toLocaleString('en-US')}`;
+        });
+        
+        expenseForm.onsubmit = function(event) {
+            event.preventDefault();
+            
+            const itemName = document.getElementById('itemName').value;
+            const jpyAmount = parseFloat(jpyAmountInput.value);
+            const twdAmount = Math.round(jpyAmount * currentRate);
+
+            if (itemName && jpyAmount > 0) {
+                if (typeof database === 'undefined') {
+                    alert('儲存失敗：Firebase 尚未連線！請檢查配置碼和網路連線。');
+                    return;
+                }
+
+                const newExpense = {
+                    name: itemName,
+                    amountJPY: jpyAmount,
+                    amountTWD: twdAmount,
+                    payer: 'K',
+                    paid: true,
+                    timestamp: firebase.database.ServerValue.TIMESTAMP
+                };
+                
+                // 核心：寫入 Firebase
+                todoRef.push(newExpense);
+                
+                expenseModal.style.display = "none";
+                expenseForm.reset();
+                twdConversionDiv.textContent = '約等於台幣 (TWD): 0';
+                
+            } else {
+                alert('請確認項目名稱和金額是否正確！');
+            }
+        }
+
+        // ----------------------------------------------------
+        // 頁面初始化與導航 (換匯計算器邏輯)
+        // ----------------------------------------------------
+        function renderRateCalculator() {
+             pageTitle.textContent = '換匯計算器';
+            addButtonContainer.style.display = 'none';
+            contentDiv.innerHTML = `
+                <div class="rate-calc-box">
+                    <div class="currency-display">
+                        <span style="font-size: 20px; font-weight: bold;">JPY</span> 輸入日幣金額
+                    </div>
+                    <input type="number" id="jpyInputRate" placeholder="0">
+                    
+                    <div class="currency-display" style="font-size: 14px; color: #666;">
+                        目前匯率：1 JPY 約等於 <span id="currentRate" style="font-weight: bold;">${currentRate}</span> TWD
+                    </div>
+                    
+                    <div class="currency-display" style="margin-top: 20px;">
+                        約等於台幣 (TWD): <br>
+                        <span id="twdResultRate" style="font-size: 30px; font-weight: bold; color: #1a73e8;">0</span>
+                    </div>
+                </div>
+            `;
+            
+            const jpyInputRate = document.getElementById('jpyInputRate');
+            const twdResultRate = document.getElementById('twdResultRate');
+            
+            jpyInputRate.addEventListener('input', () => {
+                const jpyAmount = parseFloat(jpyInputRate.value) || 0;
+                const twdAmount = (jpyAmount * currentRate);
+                twdResultRate.textContent = Math.round(twdAmount).toLocaleString('en-US'); 
+            });
+        }
+
+        if (mode === 'budget') {
+            renderBudgetList();
+        } else {
+            renderRateCalculator();
+        }
+        
+        /* 彈窗開關邏輯 */
+        const addButton = document.getElementById('addButton');
+        const closeModal = document.getElementById('closeModal');
+        
+        if (addButton) { addButton.onclick = function() { expenseModal.style.display = "flex"; jpyAmountInput.focus(); } }
+        if (closeModal) { closeModal.onclick = function() { expenseModal.style.display = "none"; expenseForm.reset(); twdConversionDiv.textContent = '約等於台幣 (TWD): 0'; } }
+        window.onclick = function(event) { if (event.target == expenseModal) { expenseModal.style.display = "none"; expenseForm.reset(); twdConversionDiv.textContent = '約等於台幣 (TWD): 0'; } }
+
+    </script>
+</body>
+</html>
