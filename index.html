@@ -12,7 +12,7 @@
 
     <!-- Icons: Minimalist Black Heart for Browser Tab & PWA -->
     <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iYmxhY2siPjxwYXRoIGQ9Ik0xMiAyMS4zNWwtMS40NS0xLjMyQzUuNCAxNS4zNiAyIDEyLjI4IDIgOC41IDIgNS40MiA0LjQyIDMgNy41IDNjMS43NCAwIDMuNDEuODEgNC41IDIuMDlDMTMuMDkgMy44MSAxNC43NiAzIDE2LjUgM2MxOS41OCAzIDIyIDUuNDIgMjIgOC41YzAgMy43OC0zLjQgNi44Ni04LjU1IDExLjU0TDEyIDIxLjM1eiIvPjwvc3ZnPg==" type="image/svg+xml">
-    <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iYmxhY2siPjxwYXRoIGQ9Ik0xMiAyMS4zNWwtMS40NS0xLjMyQzUuNCAxNS4zNiAyIDEyLjIyIDIgOC41IDIgNS40MiA0LjQyIDMgNy41IDNjMS43NCAwIDMuNDEuODEgNC41IDIuMDlDMTMuMDkgMy44MSAxNC43NiAzIDE2LjUgM2MxOS41OCAzIDIyIDUuNDIgMjIgOC41YzAgMy43OC0zLjQgNi44Ni04LjU1IDExLjU0TDEyIDIxLjM1eiIvPjwvc3ZnPg==">
+    <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iYmxhY2siPjxwYXRoIGQ9Ik0xMiAyMS4zNWwtMS40NS0xLjMyQzUuNCAxNS4zNiAyIDEyLjIyIDIgOC41IDIgNS40MiA0LjQyIDMgNy41IDNjMS43NCAwIDMuNDEuODEgNC41IDIuMDlDMTMuMDkgMy44MSAxNCu7NiAzIDE2LjUgM2MxOS41OCAzIDIyIDUuNDIgMjIgOC41YzAgMy43OC0zLjQgNi44Ni04LjU1IDExLjU0TDEyIDIxLjM1eiIvPjwvc3ZnPg==">
 
     <!-- Libraries -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -394,6 +394,7 @@
                 <h3 class="text-lg font-bold text-stone-800" id="modal-title">新增行程</h3>
                 <button onclick="closeAddModal()" class="p-2 bg-stone-100 rounded-full hover:bg-stone-200"><i data-lucide="x" class="w-4 h-4"></i></button>
             </div>
+            <!-- 坐標欄位保留，但會被忽略，僅用於航班 -->
             <input type="hidden" id="edit-id" value="">
             <input type="hidden" id="new-lat" value="">
             <input type="hidden" id="new-lng" value="">
@@ -406,23 +407,19 @@
                 <div>
                     <label class="text-[10px] font-bold text-stone-400 uppercase block mb-1">地點資訊</label>
                     <div class="flex items-center">
-                        <input type="text" id="new-location" placeholder="輸入名稱 (如: 心齋橋)" class="w-full border-b border-stone-200 py-2 outline-none bg-transparent text-sm font-sans" oninput="updateGoogleMapsLink()" onblur="geocodeLocationAndCenter(this.value)">
+                        <!-- 移除 onblur 和 map-search-feedback 邏輯 -->
+                        <input type="text" id="new-location" placeholder="輸入名稱 (如: 心齋橋)" class="w-full border-b border-stone-200 py-2 outline-none bg-transparent text-sm font-sans" oninput="updateGoogleMapsLink()">
                     </div>
                     
-                    <!-- New Google Maps Search Link -->
+                    <!-- New Google Maps Search Link - 核心輔助功能 -->
                     <a id="google-maps-link" target="_blank" class="text-[10px] text-blue-600 hover:text-blue-800 underline mt-1 flex items-center hidden" href="#">
                         <i data-lucide="external-link" class="w-3 h-3 mr-1"></i> (推薦) 點此前往 Google Maps 搜尋精確位置
                     </a>
 
-                    <p class="text-[10px] mt-1 flex items-center" id="map-search-feedback">
-                        <i data-lucide="map-pin" class="w-3 h-3 mr-1 text-red-500"></i>
-                        請在上方輸入地點後，點擊其他區域，App 將自動定位。
+                    <p class="text-[10px] mt-1 flex items-center text-stone-400">
+                        <i data-lucide="map-pin" class="w-3 h-3 mr-1"></i>
+                        地點名稱已記錄。請使用上方連結確保地點名稱正確無誤。
                     </p>
-                    <!-- Map Picker -->
-                    <div class="relative w-full h-40 bg-stone-100 rounded-lg overflow-hidden border border-stone-200 group mt-2">
-                         <div id="picker-map" class="w-full h-full z-0"></div>
-                         <div class="absolute top-2 right-2 z-10 bg-white px-2 py-1 rounded shadow text-[10px] font-bold text-stone-500 opacity-80">點擊地圖設定位置</div>
-                    </div>
                 </div>
                 <div>
                     <label class="text-[10px] font-bold text-stone-400 uppercase block mb-1">備註 / 筆記</label>
@@ -506,7 +503,7 @@
         
         let currentDayIndex = 0;
         let mapInstance = null;
-        let pickerMap = null, pickerMarker = null;
+        // Removed pickerMap and pickerMarker globals
         let userHeaderImage = localStorage.getItem('osaka_header_img');
         let userMapImage = localStorage.getItem('osaka_map_img') || "https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/Osaka_Metro_Route_Map_%28En%29.svg/1920px-Osaka_Metro_Route_Map_%28En%29.svg.png"; // Default map image
         let itineraryData = [], luggageData = [], expenses = [], infoNotes = [], shoppingData = [];
@@ -705,7 +702,7 @@
             
             // Pan limits in 'un-scaled' pixels
             const limitX = (imgWidth - containerWidth) / mapZoomLevel;
-            const limitY = (imgHeight - containerHeight) / mapZoomLevel;
+            const limitY = (imgHeight - containerHeight) / mapZoomLevel / 2; // Only allow half pan boundary for vertical map
 
             if (imgWidth > containerWidth) {
                 mapPanX = Math.min(newPanX, 0); 
@@ -1047,11 +1044,18 @@
                 const mid=`map-wrap-${currentDayIndex}`;
                 if(document.getElementById(mid)){
                     if(mapInstance){mapInstance.remove();mapInstance=null;}
+                    // Centered on Osaka if no coordinates are present
                     const c=m.length>0?[m[0].lat,m[0].lng]:[34.6937,135.5023];
                     mapInstance=L.map(mid).setView(c,13);
                     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{attribution:'&copy; OSM',maxZoom:19}).addTo(mapInstance);
                     const b=[];
-                    m.forEach(i=>{L.marker([i.lat,i.lng]).addTo(mapInstance).bindPopup(i.title);b.push([i.lat,i.lng]);});
+                    m.forEach(i=>{
+                        // Only add marker if coordinates exist (non-flight item)
+                        if (i.lat && i.lng && i.lat !== 0 && i.lng !== 0) {
+                            L.marker([i.lat,i.lng]).addTo(mapInstance).bindPopup(i.title);
+                            b.push([i.lat,i.lng]);
+                        }
+                    });
                     if(b.length>1)mapInstance.fitBounds(b,{padding:[50,50]});
                     const q=m.map(i=>i.title).join('/');
                     document.getElementById('google-maps-btn').href=m.length?`https://www.google.com/maps/dir/${q}`:`https://www.google.com/maps/search/Osaka`;
@@ -1068,18 +1072,25 @@
             const note = document.getElementById('new-note').value;
             const day = parseInt(document.getElementById('new-day').value);
             const type = document.querySelector('input[name="new-type"]:checked').value;
-            let lat = parseFloat(document.getElementById('new-lat').value);
-            let lng = parseFloat(document.getElementById('new-lng').value);
+            // Coordinates are no longer set manually by map click, only for flights in default data
+            let lat = 0; 
+            let lng = 0; 
+
             if(!title || !time) return alert('請填寫完整');
-            // FIX: Allow saving if location is not set, but prevent saving without coordinates unless it's a flight
-            if (!lat || !lng) {
-                if (type !== 'flight') {
-                    return alert('請點擊地圖標記地點坐標！');
+            
+            // Handle flights separately
+            if (type === 'flight') {
+                // If editing a default flight, preserve original hardcoded coordinates
+                const existingItem = itineraryData.find(i => i.id === id);
+                if (existingItem && existingItem.type === 'flight') {
+                    lat = existingItem.lat;
+                    lng = existingItem.lng;
                 } else {
-                    // For flights, use hardcoded generic coordinates if none set
-                    lat = 0; lng = 0; 
+                    // New flight or editing non-flight to flight, use Osaka as generic
+                    lat = 34.6937; lng = 135.5023; 
                 }
             }
+
             const itemData = { title, location: location || title, time, day, type, note, lat, lng, created: Date.now() };
             try {
                 if(db) {
@@ -1119,61 +1130,7 @@
         }
 
         // --- GEOLOCATION (New Feature) ---
-        async function geocodeLocationAndCenter(query) {
-            if (!query || query.length < 3) {
-                 const feedback = document.getElementById('map-search-feedback');
-                 feedback.innerHTML = `<i data-lucide="map-pin" class="w-3 h-3 mr-1 text-red-500"></i> 請在上方輸入地點後，點擊其他區域，App 將自動定位。`;
-                 feedback.classList.remove('text-green-600', 'text-blue-600');
-                 feedback.classList.add('text-red-500');
-                 lucide.createIcons();
-                 return;
-            }
-
-            const feedback = document.getElementById('map-search-feedback');
-            feedback.innerHTML = `<i data-lucide="loader" class="w-3 h-3 mr-1 animate-spin text-stone-500"></i> 正在搜尋精確位置...`;
-            feedback.classList.remove('text-red-500', 'text-green-600');
-            feedback.classList.add('text-stone-500');
-            lucide.createIcons();
-            
-            // Attempt Nominatim Geocoding (No API Key required)
-            // Added explicit constraints for Osaka, Japan to improve success rate
-            const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&city=Osaka&country=Japan&limit=1`;
-
-            try {
-                const response = await fetch(url);
-                const data = await response.json();
-
-                if (data && data.length > 0) {
-                    const lat = parseFloat(data[0].lat);
-                    const lng = parseFloat(data[0].lon);
-
-                    // Center map and drop marker
-                    if (pickerMarker) pickerMarker.remove();
-                    const latlng = L.latLng(lat, lng);
-                    pickerMarker = L.marker(latlng).addTo(pickerMap);
-                    pickerMap.setView(latlng, 16); // Zoom closer after successful search
-
-                    document.getElementById('new-lat').value = lat.toFixed(6);
-                    document.getElementById('new-lng').value = lng.toFixed(6);
-                    
-                    feedback.innerHTML = `<i data-lucide="check-circle" class="w-3 h-3 mr-1 text-green-600"></i> 已定位 **${data[0].display_name.split(',')[0]}**。點擊地圖可微調。`;
-                    feedback.classList.remove('text-red-500', 'text-stone-500');
-                    feedback.classList.add('text-green-600');
-                    
-                } else {
-                    // Failed, revert to manual click guidance
-                    feedback.innerHTML = `<i data-lucide="map-pin" class="w-3 h-3 mr-1 text-red-500"></i> 自動定位失敗。請點擊上方藍色連結在 Google Maps 確認後，回到此頁點擊地圖標記。`;
-                    feedback.classList.remove('text-green-600', 'text-stone-500');
-                    feedback.classList.add('text-red-500');
-                }
-            } catch (e) {
-                // Failed due to network error or API error
-                feedback.innerHTML = `<i data-lucide="alert-triangle" class="w-3 h-3 mr-1 text-red-500"></i> 搜尋發生錯誤。請使用上方 Google Maps 連結手動確認。`;
-                feedback.classList.remove('text-green-600', 'text-stone-500');
-                feedback.classList.add('text-red-500');
-            }
-            lucide.createIcons();
-        }
+        // Removed geocodeLocationAndCenter
 
         function updateGoogleMapsLink() {
             const query = document.getElementById('new-location').value.trim();
@@ -1378,59 +1335,27 @@
         function updateWeatherHighlight(idx){document.querySelectorAll('.weather-card').forEach((el,i)=>{if(i===idx){el.classList.add('bg-white','border-stone-300','shadow-sm','scale-105');el.classList.remove('bg-transparent','border-transparent','opacity-60');}else{el.classList.remove('bg-white','border-stone-300','shadow-sm','scale-105');el.classList.add('bg-transparent','border-transparent','opacity-60');}});}
         function openAddModal(){document.getElementById('add-modal').classList.remove('hidden');document.getElementById('new-day').value=currentDayIndex;document.getElementById('modal-title').innerText="新增行程";document.getElementById('modal-btn-text').innerText="確認新增";document.getElementById('edit-id').value="";document.getElementById('new-title').value="";document.getElementById('new-location').value="";document.getElementById('new-time').value="";document.getElementById('new-note').value="";document.getElementById('new-lat').value="";document.getElementById('new-lng').value="";
             // Reset feedback text
-            document.getElementById('map-search-feedback').innerHTML = `<i data-lucide="map-pin" class="w-3 h-3 mr-1 text-red-500"></i> 請在上方輸入地點後，點擊其他區域，App 將自動定位。`;
-            document.getElementById('map-search-feedback').classList.remove('text-green-600', 'text-blue-600');
-            document.getElementById('map-search-feedback').classList.add('text-red-500');
+            // 地圖移除後，提示更簡潔
+            const feedback = document.getElementById('map-search-feedback');
+            feedback.innerHTML = `<i data-lucide="map-pin" class="w-3 h-3 mr-1 text-stone-400"></i> 地點名稱將被記錄，坐標資訊需手動提供 (非必填)。`;
+            feedback.classList.remove('text-red-500', 'text-green-600', 'text-blue-600');
+            feedback.classList.add('text-stone-400');
+            
             updateGoogleMapsLink(); // Init the link visibility
 
-            if(pickerMarker) pickerMarker.remove();
-            setTimeout(()=>{ 
-                if(!pickerMap) {
-                    // Initialize Map Picker on modal opening
-                    pickerMap=L.map('picker-map').setView([34.6937, 135.5023], 13);
-                    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{attribution:'&copy; OSM',maxZoom:19}).addTo(pickerMap);
-                    pickerMap.on('click', (e) => {
-                        if(pickerMarker) pickerMarker.remove();
-                        pickerMarker = L.marker(e.latlng).addTo(pickerMap);
-                        document.getElementById('new-lat').value = e.latlng.lat.toFixed(6);
-                        document.getElementById('new-lng').value = e.latlng.lng.toFixed(6);
-                        // Clear successful search text, back to red prompt
-                        document.getElementById('map-search-feedback').innerHTML = `<i data-lucide="check-circle" class="w-3 h-3 mr-1 text-green-600"></i> 位置已標記！`;
-                        document.getElementById('map-search-feedback').classList.remove('text-red-500', 'text-stone-500');
-                        document.getElementById('map-search-feedback').classList.add('text-green-600');
-                        lucide.createIcons();
-                    });
-                }
-                pickerMap.invalidateSize(); 
-                pickerMap.setView([34.6937, 135.5023], 13); 
-            }, 200);
+            // Map picker is now gone
         }
         function openEditModal(id){const item=itineraryData.find(i=>i.id===id);if(!item)return;document.getElementById('add-modal').classList.remove('hidden');document.getElementById('modal-title').innerText="修改行程";document.getElementById('modal-btn-text').innerText="儲存修改";document.getElementById('edit-id').value=id;document.getElementById('new-title').value=item.title;document.getElementById('new-location').value=item.location||"";document.getElementById('new-time').value=item.time;document.getElementById('new-day').value=item.day;document.getElementById('new-note').value=item.note||"";
             const radios=document.getElementsByName('new-type');for(let r of radios){if(r.value===item.type)r.checked=true;}
+            
             // Reset feedback text
-            document.getElementById('map-search-feedback').innerHTML = `<i data-lucide="map-pin" class="w-3 h-3 mr-1 text-red-500"></i> 請在上方輸入地點後，點擊其他區域，App 將自動定位。`;
-            document.getElementById('map-search-feedback').classList.remove('text-green-600', 'text-blue-600');
-            document.getElementById('map-search-feedback').classList.add('text-red-500');
+            const feedback = document.getElementById('map-search-feedback');
+            feedback.innerHTML = `<i data-lucide="map-pin" class="w-3 h-3 mr-1 text-stone-400"></i> 地點名稱將被記錄，坐標資訊需手動提供 (非必填)。`;
+            feedback.classList.remove('text-red-500', 'text-green-600', 'text-blue-600');
+            feedback.classList.add('text-stone-400');
+            
             updateGoogleMapsLink(); // Init the link visibility
-
-            // Set map
-            setTimeout(()=>{ 
-                if(!pickerMap) openAddModal(); // Ensure map is initialized
-                pickerMap.invalidateSize(); 
-                if(item.lat && item.lng) {
-                    if(pickerMarker) pickerMarker.remove();
-                    pickerMarker = L.marker([item.lat, item.lng]).addTo(pickerMap);
-                    pickerMap.setView([item.lat, item.lng], 15);
-                    document.getElementById('new-lat').value = item.lat;
-                    document.getElementById('new-lng').value = item.lng;
-                    document.getElementById('map-search-feedback').innerHTML = `<i data-lucide="check-circle" class="w-3 h-3 mr-1 text-green-600"></i> 目前位置已標記。`;
-                    document.getElementById('map-search-feedback').classList.remove('text-red-500', 'text-stone-500');
-                    document.getElementById('map-search-feedback').classList.add('text-green-600');
-                } else {
-                    pickerMap.setView([34.6937, 135.5023], 13);
-                }
-                lucide.createIcons();
-            }, 200);
+            lucide.createIcons();
         }
         function closeAddModal(){document.getElementById('add-modal').classList.add('hidden');}
         function openZoomCard(t,j,r){document.getElementById('zoom-modal').classList.remove('hidden');document.getElementById('zoom-modal').classList.add('flex');document.getElementById('zoom-title').innerText=t;document.getElementById('zoom-jp').innerHTML=j;document.getElementById('zoom-ro').innerText=r;}
