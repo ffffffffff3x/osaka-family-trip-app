@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OSAKA Family Trip</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f8f8f8;
+            color: #382414;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .header {
+            width: 100%;
+            max-width: 600px;
+            background-color: #A0522D;
+            color: white;
+            padding: 15px 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+        }
+
+        .header a {
+            color: white;
+            text-decoration: none;
+            font-size: 20px;
+            margin-right: 15px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 20px;
+            flex-grow: 1;
+            text-align: center;
+            padding-right: 35px;
+        }
+        
+        .content {
+            width: 100%;
+            max-width: 600px;
+            padding: 20px;
+        }
+        
+        .section-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #A0522D;
+            margin-top: 15px;
+            margin-bottom: 10px;
+        }
+
+        .call-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 12px;
+            color: white;
+            text-decoration: none;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.1s;
+        }
+        
+        .call-card:active {
+            transform: scale(0.98);
+        }
+
+        .call-card .label {
+            font-size: 18px;
+            font-weight: 500;
+        }
+
+        .call-card .number {
+            font-size: 32px;
+            font-weight: 800;
+        }
+
+        .call-police {
+            background-color: #337ab7;
+        }
+
+        .call-fire {
+            background-color: #d9534f;
+        }
+        
+        .info-card {
+            background-color: white;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .info-card strong {
+            color: #382414;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .info-card a {
+            color: #A0522D;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        
+        .note {
+            font-size: 13px;
+            color: #999;
+            margin-top: 10px;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="index.html">‹</a>
+        <h1>🚨 當地緊急聯絡</h1>
+    </div>
+
+    <div class="content">
+        
+        <div class="section-title">主要緊急電話</div>
+        
+        <a href="tel:110" class="call-card call-police">
+            <div class="label">警察 / 交通事故</div>
+            <div class="number">110</div>
+        </a>
+
+        <a href="tel:119" class="call-card call-fire">
+            <div class="label">救護車 / 火災</div>
+            <div class="number">119</div>
+        </a>
+
+        <div class="section-title">醫療與外交支援</div>
+
+        <div class="info-card">
+            <strong>訪日外國人醫療與急難專線</strong>
+            <p>日本觀光廳提供的多國語言服務</p>
+            <a href="tel:+815038162787">📞 050-3816-2787</a>
+            <div class="note">提供英/中/韓語，24小時服務</div>
+        </div>
+        
+        <div class="info-card">
+            <strong>外交部緊急聯絡</strong>
+            <p>請備妥駐日使館或辦事處電話</p>
+            <a href="#">(點此查看駐大阪辦事處)</a>
+        </div>
+        
+        <div class="info-card" style="background-color: #fff9e6; border-left: 5px solid #A0522D;">
+            <strong>📋 兒童安心護照</strong>
+            <p style="margin: 5px 0 0;">(建議點擊此處，預先輸入兒童過敏、血型、緊急聯絡人等資訊)</p>
+        </div>
+
+    </div>
+</body>
+</html>

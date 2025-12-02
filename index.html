@@ -3,358 +3,131 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>【同步版】旅遊行前清單 - OSAKA Family Trip</title>
+    <title>OSAKA Family Trip</title>
     <style>
-        /* CSS 樣式: 簡潔白色底與咖啡色字體 */
+        /* CSS 樣式：模擬 App 介面 */
         body {
             font-family: 'Helvetica Neue', Arial, sans-serif;
             background-color: #f8f8f8;
-            color: #382414; /* 咖啡色字體 */
+            color: #382414;
             margin: 0;
-            padding: 20px;
+            padding: 0;
             display: flex;
             flex-direction: column;
             align-items: center;
         }
 
-        .container {
+        .header {
             width: 100%;
             max-width: 600px;
-            background-color: #ffffff;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        h1 {
-            color: #382414;
+            background-color: #A0522D; /* 咖啡色頂部欄 */
+            color: white;
+            padding: 20px 0;
             text-align: center;
-            margin-bottom: 25px;
-            font-size: 24px;
-        }
-
-        /* 認證與狀態提示 */
-        #authStatus {
-            text-align: center;
-            margin-bottom: 15px;
-            color: #A0522D;
-            font-weight: bold;
-        }
-
-        /* 輸入區塊樣式 */
-        .input-group {
-            display: flex;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             margin-bottom: 20px;
         }
 
-        #newItemInput {
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+
+        .content {
+            width: 100%;
+            max-width: 600px;
+            padding: 0 20px;
+        }
+
+        /* 功能卡片樣式 */
+        .feature-card {
+            background-color: #ffffff;
+            padding: 18px 25px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: transform 0.2s;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .card-icon {
+            font-size: 24px;
+            margin-right: 15px;
+        }
+
+        .card-details {
             flex-grow: 1;
-            padding: 12px;
-            border: 2px solid #D7C49E;
-            border-radius: 8px 0 0 8px;
-            font-size: 16px;
+        }
+        
+        .card-title {
+            font-size: 18px;
+            font-weight: bold;
             color: #382414;
         }
 
-        #addButton {
-            background-color: #A0522D; /* 咖啡色按鈕 */
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            text-align: center;
-            font-size: 16px;
-            cursor: pointer;
-            border-radius: 0 8px 8px 0;
-            transition: background-color 0.3s;
-        }
-
-        #addButton:hover {
-            background-color: #8B4513;
-        }
-
-        /* 清單列表樣式 */
-        #todoList {
-            list-style: none;
-            padding: 0;
-            min-height: 100px; /* 確保加載時不抖動 */
-        }
-
-        .todo-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 15px 0;
-            border-bottom: 1px solid #eee;
-        }
-
-        .todo-item:last-child {
-            border-bottom: none;
-        }
-
-        .todo-text {
-            flex-grow: 1;
-            font-size: 18px;
-            display: flex;
-            align-items: center;
-            cursor: pointer;
-        }
-
-        /* 勾選框樣式 */
-        .checkbox-custom {
-            margin-right: 15px;
-            width: 20px;
-            height: 20px;
-            border: 2px solid #D7C49E;
-            border-radius: 4px;
-            cursor: pointer;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .todo-item.checked .checkbox-custom {
-            background-color: #A0522D;
-            border-color: #A0522D;
-        }
-
-        .todo-item.checked .checkbox-custom::after {
-            content: '✓';
-            color: white;
+        .card-subtitle {
             font-size: 14px;
+            color: #A0522D; /* 咖啡色副標題 */
+            margin-top: 2px;
         }
 
-        /* 完成項目的文字樣式 */
-        .todo-item.checked .todo-text > span:last-child { /* 僅影響文字內容 */
-            text-decoration: line-through;
-            color: #ccc;
-        }
-
-        /* 刪除按鈕 */
-        .delete-btn {
-            background: none;
-            border: none;
-            color: #A0522D;
+        .arrow-icon {
             font-size: 20px;
-            cursor: pointer;
-            padding: 5px;
-            transition: color 0.3s;
-        }
-
-        .delete-btn:hover {
-            color: #8B4513;
-        }
-        
-        /* 加載指示器 */
-        #loading {
-            text-align: center;
-            padding: 20px;
-            color: #A0522D;
+            color: #D7C49E; /* 淺咖啡色箭頭 */
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>✈️ 行前打包清單 (OSAKA Family Trip)</h1>
-        <div id="authStatus">雲端狀態：連接中...</div>
-        
-        <!-- 新增項目區塊 -->
-        <div class="input-group">
-            <input type="text" id="newItemInput" placeholder="輸入新的打包項目...">
-            <button id="addButton" disabled>新增</button>
-        </div>
-
-        <!-- 清單列表 -->
-        <div id="loading">正在從雲端載入清單...</div>
-        <ul id="todoList">
-            <!-- 項目將由 JavaScript 產生並自動從雲端同步 -->
-        </ul>
+    <div class="header">
+        <h1>✈️ OSAKA Family Trip</h1>
+        <p style="font-size: 14px; margin-top: 5px;">2025/12/13 - 12/18 | 訂位代號: EDXQMB</p>
     </div>
 
-    <!-- 導入 Firebase 模組 -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    <div class="content">
+        <a href="flight.html" class="feature-card">
+            <span class="card-icon">🗺️</span>
+            <div class="card-details">
+                <div class="card-title">每日行程總覽 (主儀表板)</div>
+                <div class="card-subtitle">查看行程、天氣、地圖、航班</div>
+            </div>
+            <span class="arrow-icon">›</span>
+        </a>
 
-        // 設置日誌級別為 Debug 以便調試
-        setLogLevel('debug');
+        <a href="checklist.html" class="feature-card">
+            <span class="card-icon">📦</span>
+            <div class="card-details">
+                <div class="card-title">行前打包清單</div>
+                <div class="card-subtitle">檢查護照、駕照、住宿憑證</div>
+            </div>
+            <span class="arrow-icon">›</span>
+        </a>
 
-        // ************************************
-        // ********** 您的 Firebase 配置 **********
-        // ************************************
-        const firebaseConfig = {
-          apiKey: "AIzaSyBGmvolsS8AgPfm09qynSVIz5GOcvXDKCM",
-          authDomain: "osaka-family-trip.firebaseapp.com",
-          projectId: "osaka-family-trip",
-          storageBucket: "osaka-family-trip.firebasestorage.app",
-          messagingSenderId: "303743481222",
-          appId: "1:303743481222:web:e3e4ecb51ff89a3acfe807"
-        };
-        // ************************************
+        <a href="exchange.html" class="feature-card">
+            <span class="card-icon">💴</span>
+            <div class="card-details">
+                <div class="card-title">旅遊記帳與匯率</div>
+                <div class="card-subtitle">記錄開銷，JPY 自動換算 TWD</div>
+            </div>
+            <span class="arrow-icon">›</span>
+        </a>
         
-        // 初始化 Firebase
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
-        
-        // 定義 Firestore 資料路徑 (使用您在規則中設定的集合名稱)
-        const checklistCollectionRef = collection(db, "artifacts/family-trip-app/public/data/checklist");
-        
-        // UI 元素
-        const todoList = document.getElementById('todoList');
-        const newItemInput = document.getElementById('newItemInput');
-        const addButton = document.getElementById('addButton');
-        const authStatus = document.getElementById('authStatus');
-        const loadingIndicator = document.getElementById('loading');
-        
-        // 初始清單（只在資料庫為空時使用一次）
-        const initialItems = [
-            { text: "護照、簽證 (全家)", checked: false, createdAt: Date.now() + 1 },
-            { text: "國際駕照正本 + 日文譯本", checked: false, createdAt: Date.now() + 2 },
-            { text: "機票、住宿預訂截圖", checked: false, createdAt: Date.now() + 3 },
-            { text: "當地貨幣 (日圓 JPY) 現金", checked: false, createdAt: Date.now() + 4 },
-            { text: "常備藥品、OK 繃", checked: false, createdAt: Date.now() + 5 },
-            { text: "手機充電器、轉接頭", checked: false, createdAt: Date.now() + 6 }
-        ];
-
-        let isDataLoaded = false;
-        
-        // === 1. 認證：讓使用者匿名登入 ===
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                // 已登入
-                authStatus.textContent = `雲端狀態：已連接 (使用者 ID: ${user.uid.substring(0, 8)}...)`;
-                addButton.disabled = false;
-                // 登入成功後開始監聽資料
-                setupFirestoreListener(); 
-            } else {
-                // 尚未登入，執行匿名登入
-                authStatus.textContent = '雲端狀態：登入中...';
-                try {
-                    await signInAnonymously(auth);
-                } catch (error) {
-                    authStatus.textContent = '雲端狀態：登入失敗！請檢查網路。';
-                    console.error("匿名登入失敗:", error);
-                }
-            }
-        });
-
-        // === 2. 數據監聽：即時同步清單 ===
-        function setupFirestoreListener() {
-            // onSnapshot 會即時監聽資料庫的變化
-            onSnapshot(checklistCollectionRef, (snapshot) => {
-                const firebaseItems = [];
-                snapshot.forEach(doc => {
-                    // 將每個文件（清單項目）及其 ID 儲存起來
-                    firebaseItems.push({ id: doc.id, ...doc.data() });
-                });
-
-                // 根據建立時間排序，未完成的在前，已完成的在後
-                firebaseItems.sort((a, b) => {
-                    if (a.checked === b.checked) {
-                        return a.createdAt - b.createdAt;
-                    }
-                    return a.checked ? 1 : -1;
-                });
-
-                // 渲染到介面
-                renderItems(firebaseItems);
-                
-                // 如果是第一次載入且清單為空，則寫入初始數據
-                if (!isDataLoaded && firebaseItems.length === 0) {
-                    addInitialItems();
-                }
-                isDataLoaded = true;
-                loadingIndicator.style.display = 'none'; // 隱藏載入指示
-            });
-        }
-        
-        // 將初始項目寫入雲端（只在第一次啟動時執行）
-        async function addInitialItems() {
-            console.log("資料庫為空，寫入初始清單...");
-            for (const item of initialItems) {
-                try {
-                    await addDoc(checklistCollectionRef, item);
-                } catch (e) {
-                    console.error("寫入初始清單失敗:", e);
-                }
-            }
-        }
-
-
-        // === 3. UI 渲染 ===
-        function renderItems(items) {
-            todoList.innerHTML = ''; 
-            items.forEach((item) => {
-                const listItem = document.createElement('li');
-                listItem.className = `todo-item ${item.checked ? 'checked' : ''}`;
-                // 每個項目都使用 Firestore 的 doc.id 作為識別
-                listItem.dataset.id = item.id; 
-
-                listItem.innerHTML = `
-                    <div class="todo-text" data-id="${item.id}">
-                        <span class="checkbox-custom"></span>
-                        <span>${item.text}</span>
-                    </div>
-                    <button class="delete-btn" onclick="deleteItem('${item.id}')">✕</button>
-                `;
-                
-                // 點擊文字/勾選框切換狀態 (使用事件代理，確保只綁定一次)
-                listItem.querySelector('.todo-text').addEventListener('click', () => toggleCheck(item.id, item.checked));
-                
-                todoList.appendChild(listItem);
-            });
-        }
-
-        // === 4. 功能邏輯 (操作 Firebase) ===
-
-        // 新增項目到 Firebase
-        addButton.addEventListener('click', addItem);
-        newItemInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                addItem();
-            }
-        });
-
-        async function addItem() {
-            const text = newItemInput.value.trim();
-            if (text && auth.currentUser) {
-                try {
-                    await addDoc(checklistCollectionRef, {
-                        text: text,
-                        checked: false,
-                        createdAt: Date.now() 
-                    });
-                    newItemInput.value = ''; // 清空輸入框
-                } catch (e) {
-                    console.error("新增項目失敗:", e);
-                }
-            }
-        }
-
-        // 切換勾選狀態 (更新 Firebase)
-        async function toggleCheck(id, currentCheckedState) {
-            const itemDocRef = doc(db, "artifacts/family-trip-app/public/data/checklist", id);
-            try {
-                await updateDoc(itemDocRef, {
-                    checked: !currentCheckedState
-                });
-            } catch (e) {
-                console.error("更新狀態失敗:", e);
-            }
-        }
-
-        // 刪除項目 (從 Firebase 刪除)
-        window.deleteItem = async function(id) {
-            const itemDocRef = doc(db, "artifacts/family-trip-app/public/data/checklist", id);
-            try {
-                await deleteDoc(itemDocRef);
-            } catch (e) {
-                console.error("刪除項目失敗:", e);
-            }
-        }
-        
-    </script>
+        <a href="emergency.html" class="feature-card">
+            <span class="card-icon">🚨</span>
+            <div class="card-details">
+                <div class="card-title">當地緊急聯絡</div>
+                <div class="card-subtitle">日本警察 110 / 救護 119 / 醫療專線</div>
+            </div>
+            <span class="arrow-icon">›</span>
+        </a>
+    </div>
 </body>
 </html>

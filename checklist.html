@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OSAKA Family Trip</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f8f8f8;
+            color: #382414;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .header {
+            width: 100%;
+            max-width: 600px;
+            background-color: #A0522D;
+            color: white;
+            padding: 15px 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+        }
+
+        .header a {
+            color: white;
+            text-decoration: none;
+            font-size: 20px;
+            margin-right: 15px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 20px;
+            flex-grow: 1;
+            text-align: center;
+            padding-right: 35px;
+        }
+        
+        .content {
+            width: 100%;
+            max-width: 600px;
+            padding: 20px;
+        }
+        
+        .list-container {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .input-group { display: flex; margin-bottom: 20px; }
+        #newItemInput { flex-grow: 1; padding: 12px; border: 2px solid #D7C49E; border-radius: 8px 0 0 8px; font-size: 16px; color: #382414; }
+        #addButton { background-color: #A0522D; color: white; border: none; padding: 12px 20px; text-align: center; font-size: 16px; cursor: pointer; border-radius: 0 8px 8px 0; transition: background-color 0.3s; }
+        #addButton:hover { background-color: #8B4513; }
+        #todoList { list-style: none; padding: 0; }
+        .todo-item { display: flex; align-items: center; justify-content: space-between; padding: 15px 0; border-bottom: 1px solid #eee; transition: background-color 0.3s; }
+        .todo-item:last-child { border-bottom: none; }
+        .todo-text { flex-grow: 1; font-size: 18px; display: flex; align-items: center; cursor: pointer; }
+        .checkbox-custom { margin-right: 15px; width: 20px; height: 20px; border: 2px solid #D7C49E; border-radius: 4px; cursor: pointer; display: flex; justify-content: center; align-items: center; }
+        .todo-item.checked .checkbox-custom { background-color: #A0522D; border-color: #A0522D; }
+        .todo-item.checked .checkbox-custom::after { content: '✓'; color: white; font-size: 14px; }
+        .todo-item.checked .todo-text span:last-child { text-decoration: line-through; color: #ccc; }
+        .delete-btn { background: none; border: none; color: #A0522D; font-size: 20px; cursor: pointer; padding: 5px; transition: color 0.3s; }
+        .delete-btn:hover { color: #8B4513; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="index.html">‹</a>
+        <h1>📦 行前打包清單</h1>
+    </div>
+
+    <div class="content">
+        <div class="list-container">
+            <div class="input-group">
+                <input type="text" id="newItemInput" placeholder="輸入新的打包項目...">
+                <button id="addButton">新增</button>
+            </div>
+            <ul id="todoList">
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        const initialItems = [
+            { text: "護照、簽證 (全家)", checked: false },
+            { text: "國際駕照正本 + 日文譯本", checked: false },
+            { text: "機票、住宿預訂截圖 (KIX/KHH)", checked: false },
+            { text: "當地貨幣 (日圓 JPY) 現金", checked: false },
+            { text: "兒童常備藥品、安撫包", checked: false },
+            { text: "手機充電器、轉接頭", checked: false }
+        ];
+        
+        const todoList = document.getElementById('todoList');
+        const newItemInput = document.getElementById('newItemInput');
+        const addButton = document.getElementById('addButton');
+
+        let items = JSON.parse(localStorage.getItem('travelChecklist')) || initialItems;
+
+        function saveItems() {
+            localStorage.setItem('travelChecklist', JSON.stringify(items));
+        }
+
+        function renderItems() {
+            todoList.innerHTML = '';
+            items.forEach((item, index) => {
+                const listItem = document.createElement('li');
+                listItem.className = `todo-item ${item.checked ? 'checked' : ''}`;
+                listItem.dataset.index = index;
+
+                listItem.innerHTML = `
+                    <div class="todo-text">
+                        <span class="checkbox-custom"></span>
+                        <span>${item.text}</span>
+                    </div>
+                    <button class="delete-btn" onclick="deleteItem(${index})">✕</button>
+                `;
+                
+                listItem.querySelector('.todo-text').addEventListener('click', () => toggleCheck(index));
+                todoList.appendChild(listItem);
+            });
+        }
+
+        function toggleCheck(index) {
+            items[index].checked = !items[index].checked;
+            saveItems();
+            renderItems();
+        }
+
+        addButton.addEventListener('click', addItem);
+        newItemInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                addItem();
+            }
+        });
+
+        function addItem() {
+            const text = newItemInput.value.trim();
+            if (text) {
+                const newId = Date.now().toString(); 
+                items.push({ id: newId, text: text, checked: false });
+                newItemInput.value = '';
+                saveItems();
+                renderItems();
+            }
+        }
+
+        window.deleteItem = function(index) {
+            items.splice(index, 1);
+            saveItems();
+            renderItems();
+        }
+
+        renderItems();
+    </script>
+</body>
+</html>
