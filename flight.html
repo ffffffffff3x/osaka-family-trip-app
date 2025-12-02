@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OSAKA FAMILY TRIP - 行程</title>
+    <!-- Firebase Libraries -->
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-database.js"></script>
     <style>
@@ -11,25 +12,25 @@
         :root {
             --main-color: #955f47; /* 您的咖啡色碼 */
             --text-color: #382414;
-            --light-bg: #f8f8f8;
             --white-bg: #ffffff;
+            --emergency-red: #d9534f;
         }
 
         body {
             font-family: 'Helvetica Neue', Arial, sans-serif;
-            background-color: var(--light-bg);
+            background-color: var(--white-bg); /* 全白底 */
             color: var(--text-color);
             margin: 0;
             padding: 0;
-            padding-top: 130px; /* **重要：增加空間以容納兩行導航** */
+            padding-top: 130px; /* 留給固定導航欄的空間 */
             display: flex;
             flex-direction: column;
             align-items: center;
-            font-size: 14px; /* **整體微調縮小** */
+            font-size: 14px;
         }
 
         /* ------------------------------------------------ */
-        /* ----- 全新設計：固定白底導航欄區塊 (調整尺寸) ----- */
+        /* ----- 固定導航欄 (兩行結構) ----- */
         /* ------------------------------------------------ */
         .fixed-nav-header {
             width: 100%;
@@ -37,44 +38,37 @@
             position: fixed;
             top: 0;
             z-index: 1000;
-            background-color: var(--white-bg); /* 白底 */
-            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+            background-color: var(--white-bg);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
         }
 
-        .simple-title-bar {
-            padding: 8px 15px; /* 縮小 Padding */
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            /* 移除底線，讓它更像原生 App */
+        /* 標題行：白底，咖啡色字體 */
+        .simple-title-bar { 
+            padding: 8px 15px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            border-bottom: 1px solid #eee; 
+        }
+        .simple-title-text { text-align: center; flex-grow: 1; }
+        .simple-title-text h1 { 
+            color: var(--main-color); 
+            font-size: 17px; 
+            margin: 0; line-height: 1.2; 
+        }
+        .simple-title-text p { 
+            color: #666; 
+            font-size: 12px; 
+            margin: 0; 
+        }
+        .simple-title-bar a { 
+            color: var(--text-color); 
+            text-decoration: none; 
+            font-size: 18px; 
+            margin: 0 5px; 
         }
 
-        .simple-title-text {
-            text-align: center;
-            flex-grow: 1;
-        }
-
-        .simple-title-text h1 {
-            color: var(--main-color); /* 咖啡色字體 */
-            font-size: 17px; /* 標題字體微調 */
-            margin: 0;
-            line-height: 1.2;
-        }
-        
-        .simple-title-text p {
-            color: #666;
-            font-size: 12px; /* 副標題微調 */
-            margin: 0;
-        }
-
-        .simple-title-bar a {
-            color: var(--text-color);
-            text-decoration: none;
-            font-size: 18px; /* ICON 尺寸微調 */
-            margin: 0 5px;
-        }
-
-        /* 日期導航條 - 調整間距並讓數字居中 */
+        /* 第一行導航：日期 */
         .date-nav-wrapper {
             display: flex;
             overflow-x: auto;
@@ -82,129 +76,67 @@
             padding: 5px 10px;
             border-bottom: 1px solid #ddd;
         }
+        .date-tabs { display: flex; gap: 15px; padding: 0 5px; }
+        .date-tab { flex-shrink: 0; text-align: center; padding: 5px 2px; color: #999; cursor: pointer; border-bottom: 2px solid transparent; font-size: 13px; }
+        .date-tab.active { color: var(--main-color); font-weight: bold; border-bottom: 2px solid var(--main-color); }
+        .date-day { font-size: 10px; } 
+        .date-num { font-size: 16px; font-weight: bold; line-height: 1; } 
 
-        .date-tabs {
-            display: flex;
-            gap: 15px; /* 日期之間間距加大 */
-            padding: 0 5px;
-        }
+        /* 第二行導航：功能 */
+        .function-nav-wrapper { background-color: var(--white-bg); padding: 5px 10px 10px 10px; }
+        .function-tabs { display: flex; justify-content: space-around; width: 100%; }
+        .function-tab { padding: 5px 8px; color: var(--text-color); text-decoration: none; font-size: 11px; display: flex; flex-direction: column; align-items: center; }
+        .function-tab.active { color: var(--main-color); }
+        .function-icon { font-size: 20px; margin-bottom: 2px; line-height: 1; }
 
-        .date-tab {
-            flex-shrink: 0;
-            text-align: center;
-            padding: 5px 2px; /* 調整點擊範圍 */
-            color: #999;
-            cursor: pointer;
-            transition: color 0.2s;
-            border-bottom: 2px solid transparent;
-            font-size: 13px; /* 縮小字體 */
-        }
-
-        .date-tab.active {
-            color: var(--main-color);
-            font-weight: bold;
-            border-bottom: 2px solid var(--main-color);
-        }
-        
-        .date-day { font-size: 10px; } /* 星期幾非常小 */
-        .date-num { font-size: 16px; font-weight: bold; line-height: 1; } /* 日期數字微調 */
-
-        /* 功能導航條 - 獨立一行，極簡 ICON */
-        .function-nav-wrapper {
-            background-color: var(--white-bg);
-            padding: 5px 10px 10px 10px;
-            border-bottom: 1px solid #eee;
-        }
-        
-        .function-tabs {
-            display: flex;
-            justify-content: space-around;
-            width: 100%;
-        }
-        
-        .function-tab {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 5px 8px; /* 點擊範圍 */
-            color: var(--text-color);
-            text-decoration: none;
-            font-size: 11px; /* 功能文字極小 */
-            font-weight: 500;
-        }
-
-        .function-icon {
-            font-size: 20px; /* ICON 尺寸 */
-            margin-bottom: 2px;
-            line-height: 1;
-        }
-        
         /* ------------------------------------------------ */
-        /* ----- 頁面內容樣式 (調整尺寸) ----- */
+        /* ----- 頁面內容樣式 (線條極簡) ----- */
         /* ------------------------------------------------ */
-        .container {
-            width: 100%;
-            max-width: 600px;
-            padding: 15px; /* 縮小 Padding */
-            margin: 0 auto;
-        }
-
-        .day-info {
-            background-color: var(--white-bg);
-            padding: 15px; /* 縮小 Padding */
-            border-radius: 10px;
-            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
-            margin-bottom: 15px;
-        }
+        .container { width: 100%; max-width: 600px; padding: 15px; margin: 0 auto; }
         
-        .day-title {
-            font-size: 20px; /* 標題縮小 */
-            font-weight: bold;
-            margin-bottom: 10px;
-            color: var(--main-color);
-        }
+        .day-title { font-size: 20px; font-weight: bold; margin-bottom: 10px; color: var(--main-color); }
 
+        /* 天氣區塊：純線條，可點擊 */
         .weather-box {
             display: flex;
             align-items: center;
-            padding: 8px; /* 縮小 Padding */
-            background-color: #fff2e6; /* 淺黃色系 */
-            border-radius: 6px;
-            margin-bottom: 12px;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee; 
+            margin-bottom: 15px;
             color: var(--text-color);
-            cursor: pointer; /* 讓它看起來可點擊 */
+            cursor: pointer;
+            text-decoration: none;
         }
-
-        .weather-icon {
-            font-size: 24px; /* ICON 縮小 */
-            margin-right: 8px;
-        }
-
-        .weather-text {
-            font-size: 14px; /* 文字縮小 */
-        }
+        .weather-icon { font-size: 24px; margin-right: 8px; }
+        .weather-text { font-size: 14px; }
         
-        /* 行程卡片微調 */
+        /* 行程卡片：線條極簡風格 */
         .itinerary-card { 
-            border-left: 2px solid #D7C49E; 
-            border-radius: 8px; 
-            padding: 12px 15px; 
-            margin-bottom: 12px; 
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); 
+            background-color: var(--white-bg);
+            border-left: 3px solid var(--main-color); /* 深橘色線條突出 */
+            border-radius: 0;
+            margin-bottom: 15px;
+            padding: 12px 15px;
+            box-shadow: none;
+            border-top: 1px solid #eee; 
+            border-bottom: 1px solid #eee;
+            position: relative; 
+            cursor: pointer; 
         }
-        .card-time { font-size: 12px; margin-bottom: 4px; }
+        .card-time { font-size: 12px; color: var(--main-color); font-weight: bold; margin-bottom: 4px; }
         .card-title-main { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
         
-        /* Modal (彈窗) 樣式 - 與前版本相同 */
-        .modal-content { max-width: 600px; padding: 15px; }
-        .input-form-group label { font-size: 13px; }
-        .input-form-group input { padding: 8px; margin-bottom: 8px; font-size: 14px; }
-        .input-form-group button { padding: 10px; font-size: 14px; }
+        .delete-btn { color: #aaa; }
+        
+        /* Modal 樣式 */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4); justify-content: center; align-items: center; }
+        .modal-content { background-color: var(--white-bg); margin: auto; padding: 20px; width: 85%; max-width: 300px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .delete-btn { color: var(--emergency-red); }
     </style>
 </head>
 <body>
     <div class="fixed-nav-header">
-        
+        <!-- 標題欄 -->
         <div class="simple-title-bar">
             <a href="index.html">✕</a> 
             <div class="simple-title-text">
@@ -214,45 +146,46 @@
             <a href="info.html">ⓘ</a>
         </div>
         
+        <!-- 第一行：日期選擇 -->
         <div class="date-nav-wrapper">
             <div class="date-tabs" id="dateTabs">
-                </div>
+                <!-- 由 JS 動態生成 -->
+            </div>
         </div>
 
+        <!-- 第二行：功能切換（極簡 ICON） -->
         <div class="function-nav-wrapper">
             <div class="function-tabs">
+                <a href="flight.html" class="function-tab active">
+                    <span class="function-icon">📅</span><span>行程</span>
+                </a>
                 <a href="checklist.html" class="function-tab">
-                    <span class="function-icon">🧳</span>
-                    <span>行李</span>
+                    <span class="function-icon">🧳</span><span>行李</span>
                 </a>
                 <a href="exchange.html?mode=rate" class="function-tab">
-                    <span class="function-icon">💴</span>
-                    <span>換匯</span>
+                    <span class="function-icon">💴</span><span>換匯</span>
                 </a>
                 <a href="exchange.html?mode=budget" class="function-tab">
-                    <span class="function-icon">🧾</span>
-                    <span>記帳</span>
-                </a>
-                <a href="info.html" class="function-tab">
-                    <span class="function-icon">🚨</span>
-                    <span>資訊</span>
+                    <span class="function-icon">🧾</span><span>記帳</span>
                 </a>
             </div>
         </div>
     </div>
 
     <div class="container" id="itineraryContainer">
-        </div>
+        <!-- 行程內容將在這裡載入 -->
+    </div>
     
     <div style="text-align: center; margin: 15px;">
         <button id="addItineraryBtn" style="padding: 10px 15px; background-color: var(--text-color); color: white; border: none; border-radius: 6px; font-size: 14px; cursor: pointer;">＋ 新增行程</button>
     </div>
 
+    <!-- 新增行程 Modal 彈出視窗 -->
     <div id="addModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
                 <h2>新增行程項目</h2>
-                <span class="modal-close" id="closeModal">×</span>
+                <span class="close-btn" id="closeModal">×</span>
             </div>
             
             <form id="addForm">
@@ -273,10 +206,9 @@
         </div>
     </div>
 
-
     <script>
         // ----------------------------------------------------
-        // 【雲端配置區】請貼上您最新的配置碼 (與 exchange.html 相同)
+        // 【雲端配置區】
         // ----------------------------------------------------
         const firebaseConfig = {
             apiKey: "AIzaSyBGmvolsS8AgPfm09qynSVIz5GOcvXDKCM",
@@ -288,16 +220,16 @@
             appId: "1:303743481222:web:e3e4ecb51ff89a3acfe807"
         };
         
+        let database;
         try {
             firebase.initializeApp(firebaseConfig);
-            const database = firebase.database();
-            const itineraryRef = database.ref('travel_itinerary'); // 行程數據庫路徑
+            database = firebase.database();
         } catch (error) {
             console.error("Firebase Initialization Error:", error);
         }
-        // ----------------------------------------------------
-
-        // 新增星期幾資料，使用縮寫
+        
+        const itineraryRef = database ? database.ref('travel_itinerary') : null;
+        
         const dates = [
             { date: '12月13日', day: 'SAT' },
             { date: '12月14日', day: 'SUN' },
@@ -308,7 +240,6 @@
         ];
         let selectedDay = dates[0].date;
 
-        // 模擬 Open-Meteo 數據 (避免 API 複雜度)
         const mockWeatherData = {
             '12月13日': { icon: '☀️', text: '晴朗，15°C / 8°C' },
             '12月14日': { icon: '🌤️', text: '多雲時晴，17°C / 10°C' },
@@ -318,33 +249,26 @@
             '12月18日': { icon: '🌤️', text: '多雲，19°C / 12°C' },
         };
         
-        // 初始行程數據 (包含 18 號回程飛機時間)
         const initialItineraryData = {
             '12月13日': [
-                { id: '13-1', time: '15:25', title: '🛫 華航 CI 0176 (高雄 KHH → 大阪 KIX)', mapLink: '', image: 'https://loremflickr.com/400/200/kyoto,osaka?random=1' },
-                { id: '13-2', time: '22:00', title: '🍜 宵夜：附近拉麵店', mapLink: 'https://maps.app.goo.gl/example1', image: 'https://loremflickr.com/400/200/kyoto,food?random=2' }
+                { id: '13-1', time: '15:25', title: '🛫 華航 CI 0176 (高雄 KHH → 大阪 KIX)', mapLink: '', image: '' },
+                { id: '13-2', time: '22:00', title: '🍜 宵夜：附近拉麵店', mapLink: 'https://maps.app.goo.gl/example1', image: '' }
             ],
             '12月18日': [
-                { id: '18-1', time: '18:00', title: '退房，前往關西機場', mapLink: 'https://maps.app.goo.gl/example3', image: 'https://loremflickr.com/400/200/kyoto,airport?random=3' },
-                { id: '18-2', time: '20:30', title: '🛬 華航 CI 0177 (大阪 KIX → 高雄 KHH)', mapLink: '', image: 'https://loremflickr.com/400/200/plane,airport?random=5' }
+                { id: '18-1', time: '18:00', title: '退房，前往關西機場', mapLink: '', image: '' },
+                { id: '18-2', time: '20:30', title: '🛬 華航 CI 0177 (大阪 KIX → 高雄 KHH)', mapLink: '', image: '' }
             ]
         };
         
         const itineraryContainer = document.getElementById('itineraryContainer');
         const dateTabsContainer = document.getElementById('dateTabs');
         
-        // ----------------------------------------------------
-        // Step 1: 渲染日期標籤
-        // ----------------------------------------------------
         function renderDateTabs() {
             dateTabsContainer.innerHTML = '';
             dates.forEach((d) => {
                 const dayOnly = d.date.replace('12月', '');
                 const tab = document.createElement('div');
-                tab.className = 'date-tab';
-                if (d.date === selectedDay) {
-                    tab.classList.add('active');
-                }
+                tab.className = 'date-tab' + (d.date === selectedDay ? ' active' : '');
                 tab.innerHTML = `<div class="date-day">${d.day}</div><div class="date-num">${dayOnly}</div>`;
                 tab.dataset.date = d.date;
                 tab.addEventListener('click', () => {
@@ -357,42 +281,46 @@
             });
         }
         
-        // ----------------------------------------------------
-        // Step 2: 渲染行程卡片
-        // ----------------------------------------------------
         function renderItinerary(snapshot) {
             itineraryContainer.innerHTML = '';
             const weather = mockWeatherData[selectedDay];
             
-            // 天氣資訊：可點擊連結到即時天氣 (這裡使用 Google Search 連結)
+            // 天氣資訊：可點擊連結到即時天氣
             const weatherBox = document.createElement('a');
             weatherBox.className = 'weather-box';
-            // 點擊後跳轉到 Google 搜尋結果：大阪 12月天氣 (或直接用實時天氣連結)
             weatherBox.href = "https://www.google.com/search?q=%E5%A4%A7%E9%98%AA%E5%A4%A9%E6%B0%A3&hl=zh-TW";
-            weatherBox.target = "_blank"; // 開新視窗
+            weatherBox.target = "_blank"; 
             weatherBox.innerHTML = `
                 <div class="weather-icon">${weather.icon}</div>
-                <div class="weather-text">今日天氣：${weather.text}</div>
+                <div class="weather-text">點此查看：${selectedDay} 天氣預報</div>
             `;
             itineraryContainer.appendChild(weatherBox);
 
-            // 當天標題
             const dayTitle = document.createElement('div');
             dayTitle.className = 'day-title';
             dayTitle.textContent = `${selectedDay} 行程總覽`;
             itineraryContainer.appendChild(dayTitle);
             
             const dayData = snapshot ? snapshot.val() : {};
-            const items = dayData[selectedDay] ? Object.keys(dayData[selectedDay]).map(key => ({ ...dayData[selectedDay][key], key })).sort((a, b) => (a.time || 'zz:zz').localeCompare(b.time || 'zz:zz')) : [];
+            
+            if (itineraryRef && !dayData) {
+                 itineraryRef.set(initialItineraryData);
+                 return;
+            }
 
-            if (items.length === 0) {
+            const dayItinerary = dayData[selectedDay];
+            
+            const itemsArray = dayItinerary ? Object.keys(dayItinerary).map(key => ({ ...dayItinerary[key], key })).sort((a, b) => (a.time || 'zz:zz').localeCompare(b.time || 'zz:zz')) : [];
+
+            if (itemsArray.length === 0) {
                  itineraryContainer.innerHTML += '<div style="text-align:center; padding: 30px; color:#999; font-size: 14px;">本日子沒有安排行程，點擊下方按鈕新增吧！</div>';
                  return;
             }
             
-            items.forEach(item => {
+            itemsArray.forEach(item => {
                 const card = document.createElement('div');
                 card.className = 'itinerary-card';
+                
                 card.innerHTML = `
                     <div class="card-time">${item.time || ''}</div>
                     <div class="card-title-main">${item.title}</div>
@@ -402,110 +330,62 @@
                 itineraryContainer.appendChild(card);
             });
             
-            // 綁定刪除事件
             document.querySelectorAll('.delete-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
-                    if (confirm('確定要刪除此行程嗎？')) {
-                        deleteItineraryItem(this.dataset.key);
-                    }
+                    deleteItineraryItem(this.dataset.key);
                 });
             });
         }
         
-        // ----------------------------------------------------
-        // Step 3: Firebase 數據同步與操作
-        // ----------------------------------------------------
-        
-        // 監聽 Firebase 數據變化
-        if (typeof database !== 'undefined') {
-             itineraryRef.on('value', (snapshot) => {
-                 // 每次數據更新時，重新渲染當前選中的日期
-                 renderItinerary(snapshot);
-             }, (error) => {
-                 console.error("Firebase Read Failed:", error);
-                 itineraryContainer.innerHTML = '<div style="text-align:center; padding: 40px; color:red;">行程數據載入失敗，請檢查網路或 Firebase 配置。</div>';
-             });
-        } else {
-             itineraryContainer.innerHTML = '<div style="text-align:center; padding: 40px; color:red;">Firebase 尚未連線，無法載入行程數據。</div>';
+        function deleteItineraryItem(key) {
+             if (!database) return;
+             if (confirm('確定要刪除此行程嗎？')) {
+                 const itineraryRef = database.ref('travel_itinerary');
+                 itineraryRef.child(selectedDay).child(key).remove()
+                     .catch(error => { alert("刪除失敗: " + error.message); });
+             }
         }
 
+        if(addItineraryBtn) { addItineraryBtn.onclick = function() { addModal.style.display = "flex"; } }
+        if(closeModal) { closeModal.onclick = function() { addModal.style.display = "none"; addForm.reset(); } }
+        window.onclick = function(event) { if (event.target == addModal) { addModal.style.display = "none"; addForm.reset(); } }
+        
+        addForm.onsubmit = function(event) {
+            event.preventDefault();
+            
+            const time = document.getElementById('itemTime').value;
+            const title = document.getElementById('itemTitle').value;
+            let mapLink = document.getElementById('itemMapLink').value;
 
-        function saveItineraryItem(time, title, mapLink) {
-            if (typeof database === 'undefined') {
-                 alert('儲存失敗：Firebase 尚未連線！');
-                 return;
-            }
-            
-            const newKey = itineraryRef.child(selectedDay).push().key;
-            
-            const newItem = {
+            if (title.trim() === '') { alert('行程標題不可空白！'); return; }
+            if (mapLink && !mapLink.startsWith('http')) { mapLink = 'https://' + mapLink; }
+
+            const newItineraryItem = {
                 time: time.trim(),
                 title: title.trim(),
                 mapLink: mapLink.trim(),
                 timestamp: firebase.database.ServerValue.TIMESTAMP
             };
             
-            // 寫入 Firebase
-            itineraryRef.child(selectedDay).child(newKey).set(newItem);
-        }
-
-        function deleteItineraryItem(key) {
-             if (typeof database === 'undefined') return;
-             
-             // 找到該行程的完整路徑並移除
-             itineraryRef.child(selectedDay).child(key).remove()
-                 .then(() => {
-                    // 不需要手動渲染，Firebase 的 on('value') 會自動觸發 renderItinerary
-                 })
-                 .catch(error => {
-                     alert("刪除失敗: " + error.message);
-                 });
-        }
-        
-        // ----------------------------------------------------
-        // Step 4: 彈窗及表單邏輯
-        // ----------------------------------------------------
-        const addModal = document.getElementById('addModal');
-        const addItineraryBtn = document.getElementById('addItineraryBtn');
-        const closeModal = document.getElementById('closeModal');
-        const addForm = document.getElementById('addForm');
-        
-        if(addItineraryBtn) {
-            addItineraryBtn.onclick = function() { addModal.style.display = "flex"; }
-        }
-        if(closeModal) {
-            closeModal.onclick = function() { addModal.style.display = "none"; addForm.reset(); }
-        }
-        window.onclick = function(event) { 
-            if (event.target == addModal) { 
-                addModal.style.display = "none"; 
-                addForm.reset(); 
-            } 
-        }
-
-        addForm.onsubmit = function(event) {
-            event.preventDefault();
-            
-            const time = document.getElementById('itemTime').value;
-            const title = document.getElementById('itemTitle').value;
-            const mapLink = document.getElementById('itemMapLink').value;
-
-            if (title.trim() === '') {
-                 alert('行程標題不可空白！');
-                 return;
+            if (itineraryRef) {
+                 itineraryRef.child(selectedDay).push(newItineraryItem);
+            } else {
+                 alert('儲存失敗：未連線至 Firebase！');
             }
-
-            saveItineraryItem(time, title, mapLink);
             
             addModal.style.display = "none";
             addForm.reset();
         }
         
-        // ----------------------------------------------------
-        // Step 5: 頁面初始化
-        // ----------------------------------------------------
         renderDateTabs();
-        // 第一次載入時，Firebase 監聽器會自動呼叫 renderItinerary(snapshot)
+        if (itineraryRef) {
+             itineraryRef.on('value', (snapshot) => {
+                 renderItinerary(snapshot);
+             });
+        } else {
+             renderItinerary(null);
+        }
     </script>
 </body>
 </html>
+

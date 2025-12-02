@@ -3,82 +3,307 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OSAKA FAMILY TRIP - 清單</title>
+    <title>OSAKA FAMILY TRIP - 行李</title>
+    <!-- Firebase Libraries -->
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-database.js"></script>
     <style>
+        /* 變數設置 */
         :root {
             --main-color: #955f47;
             --text-color: #382414;
+            --white-bg: #ffffff;
+            --emergency-red: #d9534f;
+            --safe-green: #28a745;
+            --highlight-orange: #ffc107;
         }
-        /* (CSS 樣式與 flight.html 中的導航區塊和 function-tab 樣式一致) */
+
         body {
             font-family: 'Helvetica Neue', Arial, sans-serif;
-            background-color: #f8f8f8;
+            background-color: var(--white-bg);
             color: var(--text-color);
             margin: 0;
             padding: 0;
-            padding-top: 50px; 
-            text-align: center;
+            padding-top: 95px;
+            font-size: 14px;
         }
+
+        /* 導航欄樣式 (與 flight.html 相同) */
         .fixed-nav-header {
             width: 100%;
+            max-width: 600px;
             position: fixed;
             top: 0;
             z-index: 1000;
-            background-color: var(--main-color);
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            background-color: var(--white-bg);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
         }
-        .main-title {
-            color: white;
-            padding: 10px 20px;
-            font-size: 20px;
+
+        .simple-title-bar { padding: 8px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; }
+        .simple-title-text { text-align: center; flex-grow: 1; }
+        .simple-title-text h1 { color: var(--main-color); font-size: 17px; margin: 0; line-height: 1.2; }
+        .simple-title-text p { color: #666; font-size: 12px; margin: 0; }
+        .simple-title-bar a { color: var(--text-color); text-decoration: none; font-size: 18px; margin: 0 5px; }
+
+        .nav-bar-wrapper { display: flex; background-color: var(--white-bg); padding: 5px 0 10px 0; border-bottom: 1px solid #eee; justify-content: center; }
+        .function-tabs { display: flex; justify-content: space-around; width: 100%; max-width: 580px; }
+        .function-tab { padding: 5px 8px; color: #999; text-decoration: none; font-size: 11px; font-weight: 500; display: flex; flex-direction: column; align-items: center; }
+        .function-tab.active { color: var(--main-color); }
+        .function-icon { font-size: 20px; margin-bottom: 2px; line-height: 1; }
+
+        /* ------------------------------------------------ */
+        /* ----- 頁面內容樣式 (行李清單) ----- */
+        /* ------------------------------------------------ */
+        .container { width: 100%; max-width: 600px; padding: 15px; margin: 0 auto; }
+        
+        .input-area {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 10px;
+            border-bottom: 2px solid var(--main-color);
+        }
+
+        #itemInput { flex-grow: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }
+        #categorySelect { padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; background-color: #fff; color: var(--text-color); }
+        #addItemBtn { padding: 8px 15px; background-color: var(--main-color); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold; }
+
+        .section-title {
+            font-size: 15px;
             font-weight: bold;
-            text-align: center;
+            color: var(--main-color);
+            margin-bottom: 10px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
         }
-        .nav-bar-wrapper {
+
+        /* 清單項目 - 極簡線條 */
+        .checklist-item {
             display: flex;
             align-items: center;
-            background-color: var(--text-color);
-            padding: 5px 0;
-            justify-content: center;
-        }
-        .function-tabs {
-            display: flex;
-            justify-content: center;
-            width: 100%;
-        }
-        .function-tab {
-            padding: 8px 15px;
-            color: white;
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: bold;
-            transition: background-color 0.2s;
-        }
-        .function-tab.active {
-            background-color: rgba(255, 255, 255, 0.15);
+            padding: 10px 10px 10px 5px;
+            margin-bottom: 8px;
+            border-left: 5px solid transparent; 
+            border-bottom: 1px solid #f5f5f5;
+            background-color: var(--white-bg);
             border-radius: 4px;
         }
+
+        .checklist-item.border-red { border-left-color: var(--emergency-red); }
+        .checklist-item.border-orange { border-left-color: var(--highlight-orange); }
+        .checklist-item.border-green { border-left-color: var(--safe-green); }
+        .checklist-item.border-main { border-left-color: var(--main-color); }
+
+        .item-text {
+            flex-grow: 1;
+            padding: 0 10px;
+            font-size: 15px;
+            transition: text-decoration 0.3s, color 0.3s;
+        }
+
+        .item-text.checked { text-decoration: line-through; color: #aaa; }
+
+        .delete-btn { background: none; border: none; color: #aaa; font-size: 20px; line-height: 1; cursor: pointer; margin-left: 10px; padding: 5px; }
+
+        /* 自定義 Checkbox 樣式 (極簡圓形) */
+        .checkbox-container { display: block; position: relative; padding-left: 25px; margin-bottom: 0; cursor: pointer; font-size: 14px; user-select: none; }
+        .checkbox-container input { position: absolute; opacity: 0; cursor: pointer; height: 0; width: 0; }
+        .checkmark { position: absolute; top: 0; left: 0; height: 18px; width: 18px; background-color: #eee; border-radius: 50%; transition: background-color 0.2s; }
+        .checkbox-container:hover input ~ .checkmark { background-color: #ccc; }
+        .checkbox-container input:checked ~ .checkmark { background-color: var(--main-color); }
+        .checkbox-container .checkmark:after { content: ""; position: absolute; display: none; left: 6px; top: 3px; width: 5px; height: 10px; border: solid white; border-width: 0 3px 3px 0; transform: rotate(45deg); }
+        .checkbox-container input:checked ~ .checkmark:after { display: block; }
     </style>
 </head>
 <body>
     <div class="fixed-nav-header">
-        <div class="main-title">OSAKA FAMILY TRIP</div>
+        <div class="simple-title-bar">
+            <a href="flight.html">✕</a> 
+            <div class="simple-title-text">
+                <h1>OSAKA FAMILY TRIP</h1>
+                <p>大阪旅遊 2026</p>
+            </div>
+            <a href="info.html">ⓘ</a>
+        </div>
         
         <div class="nav-bar-wrapper">
             <div class="function-tabs">
-                <a href="flight.html" class="function-tab">行程</a>
-                <a href="checklist.html" class="function-tab active">清單</a>
-                <a href="exchange.html?mode=rate" class="function-tab">換匯</a>
-                <a href="exchange.html?mode=budget" class="function-tab">記帳</a>
-                <a href="info.html" class="function-tab">資訊</a>
+                <a href="flight.html" class="function-tab">
+                    <span class="function-icon">📅</span><span>行程</span>
+                </a>
+                <a href="checklist.html" class="function-tab active">
+                    <span class="function-icon">🧳</span><span>行李</span>
+                </a>
+                <a href="exchange.html?mode=rate" class="function-tab">
+                    <span class="function-icon">💴</span><span>換匯</span>
+                </a>
+                <a href="exchange.html?mode=budget" class="function-tab">
+                    <span class="function-icon">🧾</span><span>記帳</span>
+                </a>
+                <a href="info.html" class="function-tab">
+                    <span class="function-icon">🚨</span><span>資訊</span>
+                </a>
             </div>
         </div>
     </div>
-    
-    <div style="padding: 50px 20px;">
-        <h1 style="color: var(--main-color);">清單頁</h1>
-        <p>這裡是您未來可以新增行李或採購清單的地方。</p>
-        <p>您可以利用 Firebase 儲存清單數據，並在此處顯示！</p>
+
+    <div class="container">
+        
+        <div class="input-area">
+            <select id="categorySelect">
+                <option value="證件/金錢">證件/金錢</option>
+                <option value="衣物/配件" selected>衣物/配件</option>
+                <option value="藥品/衛生">藥品/衛生</option>
+                <option value="電子/雜項">電子/雜項</option>
+                <option value="其他">其他</option>
+            </select>
+            <input type="text" id="itemInput" placeholder="新增項目，按Enter...">
+            <button id="addItemBtn" onclick="addItem()">＋</button>
+        </div>
+
+        <div id="checklist">
+            <p style="text-align: center; color: #999;">載入行李清單中...</p>
+        </div>
+
     </div>
+
+    <script>
+        // ----------------------------------------------------
+        // 【雲端配置區】
+        // ----------------------------------------------------
+        const firebaseConfig = {
+            apiKey: "AIzaSyBGmvolsS8AgPfm09qynSVIz5GOcvXDKCM",
+            authDomain: "osaka-family-trip.firebaseapp.com",
+            databaseURL: "https://osaka-family-trip-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "osaka-family-trip",
+            storageBucket: "osaka-family-trip.firebasestorage.app",
+            messagingSenderId: "303743481222",
+            appId: "1:303743481222:web:e3e4ecb51ff89a3acfe807"
+        };
+        
+        let database;
+        try {
+            firebase.initializeApp(firebaseConfig);
+            database = firebase.database();
+        } catch (error) {
+            console.error("Firebase Initialization Error:", error);
+        }
+        
+        const checklistRef = database ? database.ref('luggage_checklist') : null;
+        
+        // --- 邏輯區 ---
+        function renderChecklist(items) {
+            const listElement = document.getElementById('checklist');
+            if (!listElement) return;
+
+            const itemsArray = items ? Object.keys(items).map(key => ({ ...items[key], key })) : [];
+            const sortedItems = itemsArray.sort((a, b) => {
+                if (a.category < b.category) return -1;
+                if (a.category > b.category) return 1;
+                if (a.checked === b.checked) {
+                    return (a.timestamp || 0) - (b.timestamp || 0);
+                }
+                return a.checked ? 1 : -1;
+            });
+
+            let html = '';
+            let currentCategory = '';
+            const categoryColors = {
+                '證件/金錢': 'border-red',
+                '衣物/配件': 'border-orange',
+                '藥品/衛生': 'border-green',
+                '電子/雜項': 'border-main',
+                '其他': 'border-main'
+            };
+
+            if (sortedItems.length === 0 && itemsArray.length === 0) {
+                 listElement.innerHTML = `<p style="text-align: center; color: #666; padding: 20px;">清單是空的，新增第一項吧！</p>`;
+                 return;
+            }
+
+            sortedItems.forEach(item => {
+                if (item.category !== currentCategory) {
+                    currentCategory = item.category;
+                    html += `<div class="section-title" style="margin-top: 25px;">${currentCategory}</div>`;
+                }
+
+                const lineClass = categoryColors[item.category] || 'border-main';
+
+                html += `
+                    <div class="checklist-item ${lineClass}" data-id="${item.key}">
+                        <label class="checkbox-container">
+                            <input type="checkbox" data-id="${item.key}" ${item.checked ? 'checked' : ''} onclick="updateItemChecked('${item.key}', this.checked)">
+                            <span class="checkmark"></span>
+                        </label>
+                        <span class="item-text ${item.checked ? 'checked' : ''}">${item.name}</span>
+                        <button class="delete-btn" data-id="${item.key}" onclick="deleteItem('${item.key}')">&times;</button>
+                    </div>
+                `;
+            });
+            
+            listElement.innerHTML = html;
+        }
+
+        window.addItem = function() {
+            const input = document.getElementById('itemInput');
+            const categorySelect = document.getElementById('categorySelect');
+            const itemName = input.value.trim();
+            const category = categorySelect.value;
+            
+            if (!itemName || !category || !checklistRef) {
+                alert('請確認輸入項目並檢查 Firebase 連線。');
+                return;
+            }
+
+            checklistRef.push({
+                name: itemName,
+                checked: false,
+                category: category,
+                timestamp: firebase.database.ServerValue.TIMESTAMP
+            }).then(() => {
+                input.value = '';
+            }).catch(error => {
+                console.error("Error adding item:", error);
+            });
+        }
+
+        window.updateItemChecked = function(key, checked) {
+            if (!checklistRef) return;
+            checklistRef.child(key).update({
+                checked: checked
+            }).catch(error => {
+                console.error("Error updating item:", error);
+            });
+        }
+
+        window.deleteItem = function(key) {
+            if (!checklistRef) return;
+            if(confirm('確認刪除此清單項目？')) {
+                checklistRef.child(key).remove().catch(error => {
+                    console.error("Error deleting item:", error);
+                });
+            }
+        }
+
+        // --- 初始化 ---
+        window.onload = () => {
+            if (checklistRef) {
+                checklistRef.on('value', (snapshot) => {
+                    const items = snapshot.val();
+                    renderChecklist(items);
+                });
+            } else {
+                 document.getElementById('checklist').innerHTML = `<p style="color: red; text-align: center;">Firebase 連線失敗，無法載入清單。</p>`;
+            }
+            
+            document.getElementById('itemInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    document.getElementById('addItemBtn').click();
+                }
+            });
+        };
+    </script>
 </body>
 </html>
+
