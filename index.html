@@ -12,7 +12,7 @@
 
     <!-- Icons: Minimalist Black Heart for Browser Tab & PWA -->
     <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iYmxhY2siPjxwYXRoIGQ9Ik0xMiAyMS4zNWwtMS40NS0xLjMyQzUuNCAxNS4zNiAyIDEyLjI4IDIgOC41IDIgNS40MiA0LjQyIDMgNy41IDNjMS43NCAwIDMuNDEuODEgNC41IDIuMDlDMTMuMDkgMy44MSAxNC43NiAzIDE2LjUgM2MxOS41OCAzIDIyIDUuNDIgMjIgOC41YzAgMy43OC0zLjQgNi44Ni04LjU1IDExLjU0TDEyIDIxLjM1eiIvPjwvc3ZnPg==" type="image/svg+xml">
-    <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iYmxhY2siPjxwYXRoIGQ9Ik0xMiAyMS4zNWwtMS40NS0xLjMyQzUuNCAxNS4zNiAyIDEyLjI4IDIgOC41IDIgNS40MiA0LjQyIDMgNy41IDNjMS43NCAwIDMuNDEuODEgNC41IDIuMDlDMTMuMDkgMy44MSAxNC43NiAzIDE2LjUgM2MxOS41OCAzIDIyIDUuNDIgMjIgOC41YzAgMy43OC0zLjQgNi44Ni04LjU1IDExLjU0TDEyIDIxLjM1eiIvPjwvc3ZnPg==">
+    <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iYmxhY2siPjxwYXRoIGQ9Ik0xMiAyMS4zNWwtMS40NS0xLjMyQzUuNCAxNS4zNiAyIDEyLjIyIDIgOC41IDIgNS40MiA0LjQyIDMgNy41IDNjMS43NCAwIDMuNDEuODEgNC41IDIuMDlDMTMuMDkgMy44MSAxNC43NiAzIDE2LjUgM2MxOS41OCAzIDIyIDUuNDIgMjIgOC41YzAgMy43OC0zLjQgNi44Ni04LjU1IDExLjU0TDEyIDIxLjM1eiIvPjwvc3ZnPg==">
 
     <!-- Libraries -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -82,6 +82,23 @@
         #connection-status { position: absolute; top: 15px; left: 15px; z-index: 50; width: 8px; height: 8px; border-radius: 50%; }
         .status-online { background-color: #22c55e; box-shadow: 0 0 5px #22c55e; }
         .status-offline { background-color: #ef4444; box-shadow: 0 0 5px #ef4444; }
+
+        /* Custom Map Zoom Styling */
+        #map-zoom-container {
+            width: 100%;
+            height: 320px; /* Increased height for better viewing */
+            overflow: hidden;
+            position: relative;
+        }
+        #user-map-img {
+            transform-origin: 0 0;
+            transition: transform 0.15s ease-out;
+            cursor: grab;
+            position: absolute;
+            left: 0;
+            top: 0;
+        }
+        .grabbing { cursor: grabbing !important; }
     </style>
 </head>
 <body class="antialiased">
@@ -267,8 +284,22 @@
             
             <!-- Map -->
             <div class="bg-white rounded-xl overflow-hidden shadow-sm border border-stone-200">
-                <div class="p-3 border-b border-stone-100 bg-stone-50 flex justify-between items-center"><h3 class="text-xs font-bold text-stone-600 uppercase tracking-wider flex items-center"><i data-lucide="map" class="w-4 h-4 mr-2"></i> Subway Map</h3><label class="cursor-pointer bg-white border border-stone-200 px-2 py-1 rounded text-[10px] font-bold text-stone-500 hover:bg-stone-100 transition-colors">更換圖片<input type="file" id="map-upload" accept="image/*" class="hidden" onchange="handleMapUpload(event)"></label></div>
-                <div class="overflow-auto max-h-80 bg-stone-100 relative"><img id="user-map-img" src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/Osaka_Metro_Route_Map_%28En%29.svg/1920px-Osaka_Metro_Route_Map_%28En%29.svg.png" class="w-full object-contain min-h-[200px]"></div>
+                <div class="p-3 border-b border-stone-100 bg-stone-50 flex justify-between items-center">
+                    <h3 class="text-xs font-bold text-stone-600 uppercase tracking-wider flex items-center"><i data-lucide="map" class="w-4 h-4 mr-2"></i> Subway Map</h3>
+                    <div class="flex gap-2 items-center">
+                        <button onclick="zoomMap(1.2)" class="text-stone-500 hover:text-stone-800 p-1 rounded-full hover:bg-stone-200 transition-colors" title="放大"><i data-lucide="zoom-in" class="w-4 h-4"></i></button>
+                        <button onclick="zoomMap(1/1.2)" class="text-stone-500 hover:text-stone-800 p-1 rounded-full hover:bg-stone-200 transition-colors" title="縮小"><i data-lucide="zoom-out" class="w-4 h-4"></i></button>
+                        <button onclick="zoomMap(0, true)" class="text-stone-500 hover:text-stone-800 p-1 rounded-full hover:bg-stone-200 transition-colors" title="重設"><i data-lucide="maximize" class="w-4 h-4"></i></button>
+                        <label class="cursor-pointer bg-white border border-stone-200 px-2 py-1 rounded text-[10px] font-bold text-stone-500 hover:bg-stone-100 transition-colors">更換圖片
+                            <input type="file" id="map-upload" accept="image/*" class="hidden" onchange="handleMapUpload(event)">
+                        </label>
+                    </div>
+                </div>
+                <div class="overflow-hidden bg-stone-100 relative">
+                    <div id="map-zoom-container" class="cursor-grab" onmousedown="startDrag(event)" onmousemove="dragMap(event)" onmouseup="stopDrag()" onmouseleave="stopDrag()" ontouchstart="startDrag(event)" ontouchmove="dragMap(event)" ontouchend="stopDrag()">
+                        <img id="user-map-img" src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/Osaka_Metro_Route_Map_%28En%29.svg/1920px-Osaka_Metro_Route_Map_%28En%29.svg.png" class="w-full object-contain min-h-[200px] transition-transform duration-150 ease-out" style="transform: scale(1) translate(0px, 0px);">
+                    </div>
+                </div>
             </div>
 
             <!-- Hotel -->
@@ -374,9 +405,18 @@
                 </div>
                 <div>
                     <label class="text-[10px] font-bold text-stone-400 uppercase block mb-1">地點資訊</label>
-                    <input type="text" id="new-location" placeholder="輸入名稱 (如: 心齋橋)" class="w-full border-b border-stone-200 py-2 outline-none bg-transparent text-sm font-sans mb-2">
+                    <div class="flex gap-2 items-center">
+                        <input type="text" id="new-location" placeholder="輸入名稱 (如: 心齋橋)" class="flex-1 border-b border-stone-200 py-2 outline-none bg-transparent text-sm font-sans">
+                        <button onclick="geocodeLocation()" class="p-1.5 bg-stone-100 rounded-full text-stone-600 hover:bg-stone-200" title="搜尋地圖位置">
+                            <i data-lucide="search" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                    <p class="text-[10px] text-red-500 mt-1 flex items-center">
+                        <i data-lucide="map-pin" class="w-3 h-3 mr-1"></i>
+                        點擊放大鏡後，請在地圖上點擊精確位置。
+                    </p>
                     <!-- Map Picker -->
-                    <div class="relative w-full h-40 bg-stone-100 rounded-lg overflow-hidden border border-stone-200 group">
+                    <div class="relative w-full h-40 bg-stone-100 rounded-lg overflow-hidden border border-stone-200 group mt-2">
                          <div id="picker-map" class="w-full h-full z-0"></div>
                          <div class="absolute top-2 right-2 z-10 bg-white px-2 py-1 rounded shadow text-[10px] font-bold text-stone-500 opacity-80">點擊地圖設定位置</div>
                     </div>
@@ -465,9 +505,21 @@
         let mapInstance = null;
         let pickerMap = null, pickerMarker = null;
         let userHeaderImage = localStorage.getItem('osaka_header_img');
+        let userMapImage = localStorage.getItem('osaka_map_img') || "https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/Osaka_Metro_Route_Map_%28En%29.svg/1920px-Osaka_Metro_Route_Map_%28En%29.svg.png"; // Default map image
         let itineraryData = [], luggageData = [], expenses = [], infoNotes = [], shoppingData = [];
         let currentUser = null;
         let tempShopImg = null;
+        
+        // Map Zoom/Pan State
+        let mapZoomLevel = 1.0;
+        let mapPanX = 0;
+        let mapPanY = 0;
+        let isDragging = false;
+        let startX = 0;
+        let startY = 0;
+        let currentPanX = 0;
+        let currentPanY = 0;
+
 
         // DEFAULT DATA - ONLY FLIGHTS KEPT HERE AS REQUESTED
         const DEFAULT_ITINERARY = [
@@ -491,6 +543,8 @@
                 initExpensesLocal(); 
                 initInfoNotesLocal(); 
                 initShoppingLocal();
+                initMapZoom(); // Initialize map zoom state
+                document.getElementById('user-map-img').src = userMapImage; // Set initial map source
             } catch (e) { console.error("UI Init Err", e); }
 
             // 2. Async Data Fetches (Don't block)
@@ -569,6 +623,106 @@
                 img.onerror = () => resolve(base64Str); // Fail safe
             });
         }
+
+        // --- MAP ZOOM/PAN LOGIC (New Feature) ---
+        function initMapZoom() {
+            const img = document.getElementById('user-map-img');
+            img.style.transform = `scale(1) translate(0px, 0px)`;
+            mapZoomLevel = 1.0;
+            mapPanX = 0;
+            mapPanY = 0;
+        }
+
+        function applyMapTransform() {
+            const img = document.getElementById('user-map-img');
+            img.style.transform = `scale(${mapZoomLevel}) translate(${mapPanX}px, ${mapPanY}px)`;
+            // Update cursor based on zoom level
+            const container = document.getElementById('map-zoom-container');
+            container.classList.toggle('cursor-grab', mapZoomLevel > 1.0);
+            container.classList.toggle('cursor-default', mapZoomLevel <= 1.0);
+        }
+
+        function zoomMap(factor, reset = false) {
+            if (reset) {
+                mapZoomLevel = 1.0;
+                mapPanX = 0;
+                mapPanY = 0;
+            } else {
+                mapZoomLevel = Math.min(Math.max(mapZoomLevel * factor, 1.0), 5.0); // Min 1x, Max 5x
+            }
+            applyMapTransform();
+        }
+
+        function startDrag(e) {
+            if (mapZoomLevel <= 1.0) return;
+            e.preventDefault();
+            isDragging = true;
+            document.getElementById('map-zoom-container').classList.add('grabbing');
+            // Get touch or mouse coordinates
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            startX = clientX;
+            startY = clientY;
+            currentPanX = mapPanX;
+            currentPanY = mapPanY;
+        }
+
+        function dragMap(e) {
+            if (!isDragging || mapZoomLevel <= 1.0) return;
+            e.preventDefault();
+            
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+            const dx = clientX - startX;
+            const dy = clientY - startY;
+
+            mapPanX = currentPanX + dx / mapZoomLevel; // Adjust pan sensitivity
+            mapPanY = currentPanY + dy / mapZoomLevel;
+
+            // Apply Boundary Checks (Prevent panning off the image)
+            const img = document.getElementById('user-map-img');
+            const container = document.getElementById('map-zoom-container');
+            const imgWidth = img.clientWidth * mapZoomLevel;
+            const imgHeight = img.clientHeight * mapZoomLevel;
+            const containerWidth = container.clientWidth;
+            const containerHeight = container.clientHeight;
+
+            const maxPanX = Math.max(0, (imgWidth - containerWidth) / mapZoomLevel / 2);
+            const maxPanY = Math.max(0, (imgHeight - containerHeight) / mapZoomLevel / 2);
+
+            // Left/Right bounds
+            if (imgWidth > containerWidth) {
+                const limitX = (imgWidth - containerWidth) / mapZoomLevel;
+                mapPanX = Math.min(mapPanX, 0); // Cannot pan too far right (image is anchored left)
+                mapPanX = Math.max(mapPanX, -limitX); // Cannot pan too far left
+            } else {
+                mapPanX = 0;
+            }
+            
+            // Top/Bottom bounds
+            if (imgHeight > containerHeight) {
+                const limitY = (imgHeight - containerHeight) / mapZoomLevel;
+                mapPanY = Math.min(mapPanY, 0);
+                mapPanY = Math.max(mapPanY, -limitY);
+            } else {
+                mapPanY = 0;
+            }
+
+
+            applyMapTransform();
+        }
+
+        function stopDrag() {
+            if (isDragging) {
+                isDragging = false;
+                document.getElementById('map-zoom-container').classList.remove('grabbing');
+                // Persist the current state for next drag/zoom
+                currentPanX = mapPanX;
+                currentPanY = mapPanY;
+            }
+        }
+
 
         // --- AUTH & DATA MANAGEMENT ---
         async function loginWithGoogle() {
@@ -704,6 +858,19 @@
                         userHeaderImage = img;
                         localStorage.setItem('osaka_header_img', userHeaderImage);
                         document.getElementById('daily-scenic-img').src = userHeaderImage;
+                    }
+                }
+            });
+
+            // Settings (Map Image) - NEW SYNC LISTENER
+            publicRef.collection('settings').doc('map').onSnapshot(doc => {
+                if(doc.exists && doc.data().img) {
+                    const img = doc.data().img;
+                    if(img !== userMapImage) {
+                        userMapImage = img;
+                        localStorage.setItem('osaka_map_img', userMapImage);
+                        document.getElementById('user-map-img').src = userMapImage;
+                        initMapZoom(); // Reset zoom when new map loads
                     }
                 }
             });
@@ -934,6 +1101,48 @@
             }
         }
 
+        // --- GEOLOCATION (New Feature) ---
+        async function geocodeLocation() {
+            const query = document.getElementById('new-location').value;
+            if (!query) return;
+
+            // Simple loading feedback
+            const searchButton = document.querySelector('.flex-1 + button');
+            searchButton.innerHTML = `<i data-lucide="loader-circle" class="w-4 h-4 animate-spin"></i>`;
+            lucide.createIcons();
+
+            try {
+                // Using Nominatim (OpenStreetMap) for geocoding
+                const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}, Osaka, Japan&limit=1`);
+                const data = await res.json();
+                
+                if (data && data.length > 0) {
+                    const result = data[0];
+                    const lat = parseFloat(result.lat);
+                    const lng = parseFloat(result.lon);
+
+                    if (pickerMarker) pickerMarker.remove();
+                    
+                    pickerMarker = L.marker([lat, lng]).addTo(pickerMap);
+                    pickerMap.setView([lat, lng], 15);
+                    
+                    document.getElementById('new-lat').value = lat.toFixed(6);
+                    document.getElementById('new-lng').value = lng.toFixed(6);
+
+                    alert(`已定位到: ${result.display_name.split(',')[0]}。請在地圖上點擊微調位置。`);
+                } else {
+                    alert('找不到該地點，請嘗試輸入更詳細的名稱（例如：完整地址或店名）。');
+                }
+            } catch (e) {
+                console.error("Geocoding failed", e);
+                alert('地圖搜尋失敗，請檢查網路或手動在地圖上點擊。');
+            } finally {
+                searchButton.innerHTML = `<i data-lucide="search" class="w-4 h-4"></i>`;
+                lucide.createIcons();
+            }
+        }
+
+
         // --- SHOPPING ---
         function handleShopImg(e) {
             const f = e.target.files[0];
@@ -1057,7 +1266,8 @@
 
         function initDateTabs(){const c=document.getElementById('date-tabs');const s=document.getElementById('new-day');for(let i=0;i<TOTAL_DAYS;i++){const d=new Date(TRIP_START);d.setDate(TRIP_START.getDate()+i);const m=d.getMonth()+1;const day=d.getDate();const w=WEEKDAYS[d.getDay()];const b=document.createElement('button');b.className=`date-tab flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-bold border transition-all ${i===0?'bg-stone-800 text-white border-stone-800':'bg-white text-stone-400 border-stone-200'}`;b.innerText=`Day ${i+1} (${w})`;b.onclick=()=>setDay(i);c.appendChild(b);const o=document.createElement('option');o.value=i;o.text=`Day ${i+1} - ${m}/${day} (${w})`;s.appendChild(o);}updateHeaderImage(0);}
         function setDay(i){currentDayIndex=i;document.querySelectorAll('.date-tab').forEach((t,idx)=>{t.className=idx===i?'date-tab flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-bold border transition-all bg-stone-800 text-white border-stone-800 shadow-md':'date-tab flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-bold border transition-all bg-white text-stone-400 border-stone-200'});document.getElementById('header-day-num').innerText=i+1;updateHeaderImage(i);updateWeatherHighlight(i);renderItineraryList();}
-        function handleHeaderUpload(e){
+        
+        async function handleHeaderUpload(e){
             const f=e.target.files[0];
             if(f){
                 const r=new FileReader();
@@ -1083,6 +1293,39 @@
                 r.readAsDataURL(f);
             }
         }
+        
+        async function handleMapUpload(e){
+            const f=e.target.files[0];
+            if(f){
+                const r=new FileReader();
+                r.onload=async function(evt){
+                    // Compress and sync to cloud
+                    const compressed = await compressImage(evt.target.result, 1920, 0.8); // High quality for map
+                    userMapImage=compressed;
+                    localStorage.setItem('osaka_map_img',userMapImage);
+                    document.getElementById('user-map-img').src=userMapImage;
+                    initMapZoom(); // Reset zoom state for new map
+
+                    // Upload to Firebase
+                    if(db) {
+                        try {
+                            await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('settings').doc('map').set({
+                                img: userMapImage,
+                                updated: Date.now()
+                            });
+                            alert("地鐵地圖已上傳並同步到雲端！");
+                        } catch(err) {
+                            console.error("Map upload failed", err);
+                            alert("地圖同步到雲端失敗，請檢查網路。");
+                        }
+                    } else {
+                         alert("地圖已上傳到本機，但未同步到雲端 (Firebase連線失敗)。");
+                    }
+                };
+                r.readAsDataURL(f);
+            }
+        }
+
         function updateHeaderImage(i){const img=document.getElementById('daily-scenic-img');img.style.opacity='0';setTimeout(()=>{img.src=userHeaderImage||SCENIC_IMAGES[i%SCENIC_IMAGES.length];img.onload=()=>img.style.opacity='1';},300);}
         function updateWeatherHighlight(idx){document.querySelectorAll('.weather-card').forEach((el,i)=>{if(i===idx){el.classList.add('bg-white','border-stone-300','shadow-sm','scale-105');el.classList.remove('bg-transparent','border-transparent','opacity-60');}else{el.classList.remove('bg-white','border-stone-300','shadow-sm','scale-105');el.classList.add('bg-transparent','border-transparent','opacity-60');}});}
         function openAddModal(){document.getElementById('add-modal').classList.remove('hidden');document.getElementById('new-day').value=currentDayIndex;document.getElementById('modal-title').innerText="新增行程";document.getElementById('modal-btn-text').innerText="確認新增";document.getElementById('edit-id').value="";document.getElementById('new-title').value="";document.getElementById('new-location').value="";document.getElementById('new-time').value="";document.getElementById('new-note').value="";document.getElementById('new-lat').value="";document.getElementById('new-lng').value="";
@@ -1123,7 +1366,6 @@
         function closeAddModal(){document.getElementById('add-modal').classList.add('hidden');}
         function openZoomCard(t,j,r){document.getElementById('zoom-modal').classList.remove('hidden');document.getElementById('zoom-modal').classList.add('flex');document.getElementById('zoom-title').innerText=t;document.getElementById('zoom-jp').innerHTML=j;document.getElementById('zoom-ro').innerText=r;}
         function closeZoomCard(){document.getElementById('zoom-modal').classList.add('hidden');document.getElementById('zoom-modal').classList.remove('flex');}
-        function handleMapUpload(e){const f=e.target.files[0];if(f){const r=new FileReader();r.onload=function(evt){document.getElementById('user-map-img').src=evt.target.result;};r.readAsDataURL(f);}}
     </script>
 </body>
 </html>
