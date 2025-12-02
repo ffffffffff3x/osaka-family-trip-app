@@ -10,9 +10,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#F5F5F4">
 
-    <!-- Icons: Minimalist Family of Three (Dad, Mom, Girl) -->
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3209/3209966.png">
-    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/3209/3209966.png">
+    <!-- Icons: Removed as requested to use system default -->
 
     <!-- Libraries -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -631,7 +629,8 @@
             publicRef.collection('itinerary').onSnapshot(snap => {
                 const fetched = snap.docs.map(d => ({id: d.id, ...d.data()}));
                 if(fetched.length === 0 && itineraryData.length === 0) { 
-                    DEFAULT_ITINERARY.forEach(async f => await publicRef.collection('itinerary').add({...f, created: Date.now()})); 
+                    // Use .set() to force the IDs to be consistent with DEFAULT_ITINERARY ids
+                    DEFAULT_ITINERARY.forEach(async f => await publicRef.collection('itinerary').doc(f.id).set({...f, created: Date.now()})); 
                 } else if(fetched.length > 0) { itineraryData = fetched; renderItineraryList(); }
             }, () => updateStatus(false));
 
@@ -852,8 +851,24 @@
         }
         async function deleteItinerary(id) {
             if(!confirm('確認刪除？')) return;
-            try { if(db) await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('itinerary').doc(id).delete(); else throw new Error(); } catch(e) {
-                itineraryData = itineraryData.filter(i => i.id !== id); localStorage.setItem('osaka_itinerary_2025_v5', JSON.stringify(itineraryData)); renderItineraryList();
+            
+            // Optimistic update: Remove from UI immediately
+            const originalData = [...itineraryData];
+            itineraryData = itineraryData.filter(i => i.id !== id);
+            renderItineraryList();
+
+            try { 
+                if(db) await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('itinerary').doc(id).delete(); 
+                else throw new Error(); 
+                
+                // Sync local storage on success just in case
+                localStorage.setItem('osaka_itinerary_2025_v5', JSON.stringify(itineraryData));
+            } catch(e) {
+                console.error('Delete failed:', e);
+                // Rollback UI if delete failed
+                itineraryData = originalData;
+                renderItineraryList();
+                alert('刪除失敗，請檢查網路連線');
             }
         }
 
