@@ -252,7 +252,7 @@
             appId: "1:303743481222:web:e3e4ecb51ff89a3acfe807"
         };
         const appId = 'osaka-2025-v4-map';
-        let db, auth, userId;
+        let db = null, auth = null;
 
         const DEFAULT_ITINERARY = [
             { id: 'd1_1', day: 0, time: '15:25', title: 'KHH 高雄起飛 (CI 176)', type: 'flight', location: '高雄小港機場', lat: 22.57, lng: 120.35 },
@@ -289,10 +289,10 @@
                 db = firebase.firestore();
                 auth = firebase.auth();
                 await auth.signInAnonymously();
-                // Setup all listeners for sync
                 setupSyncListeners();
             } catch(e) { 
-                console.error("Firebase Auth Error", e);
+                console.error("Firebase Init Error:", e);
+                db = null; // Ensure db is null to trigger local fallback
             }
 
             setTimeout(() => {
@@ -317,6 +317,7 @@
 
         // --- FIREBASE SYNC SETUP ---
         function setupSyncListeners() {
+            if(!db) return;
             // Itinerary
             db.collection('artifacts').doc(appId).collection('public').doc('data').collection('itinerary')
               .onSnapshot(snap => {
@@ -333,7 +334,6 @@
               .onSnapshot(snap => {
                   luggageData = snap.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b) => a.created - b.created);
                   if(luggageData.length === 0) {
-                      // Init defaults if empty
                       [{text:'護照',checked:false},{text:'網卡',checked:false},{text:'日幣',checked:false}].forEach(async i => await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('luggage').add({...i, created: Date.now()}));
                   } else {
                       renderLuggage();
@@ -359,8 +359,51 @@
         function initExpensesLocal() { const s = localStorage.getItem('osaka_expenses_2025'); expenses = s ? JSON.parse(s) : []; renderExpenses(); }
         function initInfoNotesLocal() { const s = localStorage.getItem('osaka_notes_2025'); infoNotes = s ? JSON.parse(s) : []; renderInfoNotes(); }
 
-        // --- RENDERING & ACTIONS ---
-        // 1. Itinerary
+        // --- ACTIONS (WITH ERROR HANDLING) ---
+        async function saveItineraryItem() {
+            const id = document.getElementById('edit-id').value;
+            const title = document.getElementById('new-title').value;
+            const location = document.getElementById('new-location').value;
+            const time = document.getElementById('new-time').value;
+            const day = parseInt(document.getElementById('new-day').value);
+            const type = document.querySelector('input[name="new-type"]:checked').value;
+            if(!title || !time) return alert('請填寫完整');
+            
+            const itemData = { title, location: location || title, time, day, type, created: Date.now() };
+            if(type !== 'flight') { itemData.lat = 34.6937 + (Math.random()*0.02-0.01); itemData.lng = 135.5023 + (Math.random()*0.02-0.01); } 
+
+            try {
+                if(db) {
+                    if(id) await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('itinerary').doc(id).update(itemData);
+                    else await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('itinerary').add(itemData);
+                } else {
+                    throw new Error("Local Mode");
+                }
+            } catch(e) {
+                console.warn("Cloud save failed, using local", e);
+                // Fallback
+                if(id) itineraryData = itineraryData.map(i => i.id === id ? { ...i, ...itemData, id } : i);
+                else itineraryData.push({ ...itemData, id: Date.now().toString() });
+                localStorage.setItem('osaka_itinerary_2025_v5', JSON.stringify(itineraryData));
+                renderItineraryList();
+            }
+            closeAddModal();
+        }
+
+        async function deleteItinerary(id) {
+            if(!confirm('確認刪除？')) return;
+            try {
+                if(db) await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('itinerary').doc(id).delete();
+                else throw new Error("Local Mode");
+            } catch(e) {
+                console.warn("Cloud delete failed", e);
+                itineraryData = itineraryData.filter(i => i.id !== id);
+                localStorage.setItem('osaka_itinerary_2025_v5', JSON.stringify(itineraryData));
+                renderItineraryList();
+            }
+        }
+
+        // Render Functions
         function renderItineraryList() {
             const list = document.getElementById('itinerary-list'); list.innerHTML = '';
             const dayItems = itineraryData.filter(i => parseInt(i.day) === currentDayIndex).sort((a,b) => a.time.localeCompare(b.time));
@@ -397,56 +440,23 @@
             }, 100);
             lucide.createIcons();
         }
-        async function saveItineraryItem() {
-            const id = document.getElementById('edit-id').value;
-            const title = document.getElementById('new-title').value;
-            const location = document.getElementById('new-location').value;
-            const time = document.getElementById('new-time').value;
-            const day = parseInt(document.getElementById('new-day').value);
-            const type = document.querySelector('input[name="new-type"]:checked').value;
-            if(!title || !time) return alert('請填寫完整');
-            const itemData = { title, location: location || title, time, day, type, created: Date.now() };
-            if(type !== 'flight') { itemData.lat = 34.6937 + (Math.random()*0.02-0.01); itemData.lng = 135.5023 + (Math.random()*0.02-0.01); } 
-            if(db) {
-                if(id) await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('itinerary').doc(id).update(itemData);
-                else await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('itinerary').add(itemData);
-            } else {
-                if(id) itineraryData = itineraryData.map(i => i.id === id ? { ...i, ...itemData, id } : i);
-                else itineraryData.push({ ...itemData, id: Date.now().toString() });
-                localStorage.setItem('osaka_itinerary_2025_v5', JSON.stringify(itineraryData));
-                renderItineraryList();
-            }
-            closeAddModal();
-        }
-        async function deleteItinerary(id) {
-            if(confirm('確認刪除？')) {
-                if(db) await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('itinerary').doc(id).delete();
-                else { itineraryData = itineraryData.filter(i => i.id !== id); localStorage.setItem('osaka_itinerary_2025_v5', JSON.stringify(itineraryData)); renderItineraryList(); }
-            }
-        }
 
-        // 2. Luggage (Synced)
-        function renderLuggage() {
-            const c=document.getElementById('luggage-list');c.innerHTML='';const done=luggageData.filter(i=>i.checked).length;document.getElementById('luggage-count').innerText=`${done}/${luggageData.length}`;document.getElementById('progress-bar').style.width=luggageData.length?(done/luggageData.length)*100+'%':'0%';
-            luggageData.forEach(i=>{const el=document.createElement('div');el.className='flex items-center justify-between p-3 bg-white border border-stone-200 rounded-lg group hover:shadow-sm transition-all';el.innerHTML=`<label class="flex items-center flex-1 cursor-pointer select-none"><input type="checkbox" class="w-5 h-5 rounded border-stone-300 text-stone-800 focus:ring-stone-500 mr-3" ${i.checked?'checked':''} onchange="toggleLuggage('${i.id}', ${i.checked})"><span class="${i.checked?'line-through text-stone-300':'text-stone-700'} text-sm font-medium transition-colors">${i.text}</span></label><button onclick="deleteLuggage('${i.id}')" class="opacity-0 group-hover:opacity-100 text-stone-300 hover:text-red-400 transition-all px-2"><i data-lucide="x" class="w-4 h-4"></i></button>`;c.appendChild(el);});
-            lucide.createIcons();
-        }
-        async function addLuggageItem(){const v=document.getElementById('new-luggage-item').value;if(v){if(db) await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('luggage').add({text:v,checked:false,created:Date.now()}); else {luggageData.push({id:Date.now().toString(),text:v,checked:false}); renderLuggage();} document.getElementById('new-luggage-item').value='';}}
-        async function toggleLuggage(id, old){if(db) await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('luggage').doc(id).update({checked:!old}); else { luggageData = luggageData.map(i=>i.id===id?{...i,checked:!old}:i); renderLuggage();}}
-        async function deleteLuggage(id){if(db) await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('luggage').doc(id).delete(); else { luggageData = luggageData.filter(i=>i.id!==id); renderLuggage();}}
+        // Other Sync Actions
+        async function addLuggageItem(){const v=document.getElementById('new-luggage-item').value;if(!v)return; try{if(db) await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('luggage').add({text:v,checked:false,created:Date.now()}); else throw new Error();}catch(e){luggageData.push({id:Date.now().toString(),text:v,checked:false});renderLuggage();localStorage.setItem('osaka_luggage_2025_v2',JSON.stringify(luggageData));} document.getElementById('new-luggage-item').value='';}
+        async function toggleLuggage(id, old){try{if(db) await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('luggage').doc(id).update({checked:!old}); else throw new Error();}catch(e){luggageData=luggageData.map(i=>i.id===id?{...i,checked:!old}:i);renderLuggage();localStorage.setItem('osaka_luggage_2025_v2',JSON.stringify(luggageData));}}
+        async function deleteLuggage(id){try{if(db) await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('luggage').doc(id).delete(); else throw new Error();}catch(e){luggageData=luggageData.filter(i=>i.id!==id);renderLuggage();localStorage.setItem('osaka_luggage_2025_v2',JSON.stringify(luggageData));}}
+        function renderLuggage(){const c=document.getElementById('luggage-list');c.innerHTML='';const done=luggageData.filter(i=>i.checked).length;document.getElementById('luggage-count').innerText=`${done}/${luggageData.length}`;document.getElementById('progress-bar').style.width=luggageData.length?(done/luggageData.length)*100+'%':'0%';luggageData.forEach(i=>{const el=document.createElement('div');el.className='flex items-center justify-between p-3 bg-white border border-stone-200 rounded-lg group hover:shadow-sm transition-all';el.innerHTML=`<label class="flex items-center flex-1 cursor-pointer select-none"><input type="checkbox" class="w-5 h-5 rounded border-stone-300 text-stone-800 focus:ring-stone-500 mr-3" ${i.checked?'checked':''} onchange="toggleLuggage('${i.id}', ${i.checked})"><span class="${i.checked?'line-through text-stone-300':'text-stone-700'} text-sm font-medium transition-colors">${i.text}</span></label><button onclick="deleteLuggage('${i.id}')" class="opacity-0 group-hover:opacity-100 text-stone-300 hover:text-red-400 transition-all px-2"><i data-lucide="x" class="w-4 h-4"></i></button>`;c.appendChild(el);});lucide.createIcons();}
 
-        // 3. Expenses (Synced)
         let showTWD=false;
         function calculateExchange(){document.getElementById('twd-output').innerText=Math.round((parseFloat(document.getElementById('jpy-input').value)||0)*0.215).toLocaleString();}
-        async function addExpense(){const n=document.getElementById('expense-note').value;const a=parseInt(document.getElementById('expense-amt').value);if(n&&!isNaN(a)){if(db) await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('expenses').add({note:n,amt:a,created:Date.now()}); else {expenses.unshift({id:Date.now().toString(),note:n,amt:a}); renderExpenses();} document.getElementById('expense-note').value='';document.getElementById('expense-amt').value='';}}
-        async function deleteExpense(id){if(db) await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('expenses').doc(id).delete(); else {expenses=expenses.filter(e=>e.id!==id); renderExpenses();}}
+        async function addExpense(){const n=document.getElementById('expense-note').value;const a=parseInt(document.getElementById('expense-amt').value);if(!n||isNaN(a))return;try{if(db) await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('expenses').add({note:n,amt:a,created:Date.now()}); else throw new Error();}catch(e){expenses.unshift({id:Date.now().toString(),note:n,amt:a});renderExpenses();localStorage.setItem('osaka_expenses_2025',JSON.stringify(expenses));} document.getElementById('expense-note').value='';document.getElementById('expense-amt').value='';}
+        async function deleteExpense(id){try{if(db) await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('expenses').doc(id).delete(); else throw new Error();}catch(e){expenses=expenses.filter(e=>e.id!==id);renderExpenses();localStorage.setItem('osaka_expenses_2025',JSON.stringify(expenses));}}
         function renderExpenses(){const c=document.getElementById('expense-list');c.innerHTML='';let t=0;expenses.forEach(e=>{t+=e.amt;const d=document.createElement('div');d.className='flex justify-between items-center py-3 border-b border-stone-100 last:border-0';d.innerHTML=`<div class="flex items-center"><button onclick="deleteExpense('${e.id}')" class="mr-3 text-stone-200 hover:text-red-400"><i data-lucide="minus-circle" class="w-4 h-4"></i></button><span class="text-sm text-stone-700 font-medium">${e.note}</span></div><span class="font-mono text-stone-600 font-bold tracking-tight">¥${e.amt.toLocaleString()}</span>`;c.appendChild(d);});const tel=document.getElementById('total-expense');tel.innerText=showTWD?`NT$ ${Math.round(t*0.215).toLocaleString()}`:`¥ ${t.toLocaleString()}`;lucide.createIcons();}
         function toggleTotalCurrency(){showTWD=!showTWD;renderExpenses();}
 
-        // 4. Notes (Synced)
+        async function addInfoNote(){const v=document.getElementById('new-note-input').value;if(!v)return;try{if(db) await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('notes').add({text:v,created:Date.now()}); else throw new Error();}catch(e){infoNotes.push({id:Date.now().toString(),text:v});renderInfoNotes();localStorage.setItem('osaka_notes_2025',JSON.stringify(infoNotes));} document.getElementById('new-note-input').value='';}
+        async function deleteInfoNote(id){try{if(db) await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('notes').doc(id).delete(); else throw new Error();}catch(e){infoNotes=infoNotes.filter(n=>n.id!==id);renderInfoNotes();localStorage.setItem('osaka_notes_2025',JSON.stringify(infoNotes));}}
         function renderInfoNotes(){const l=document.getElementById('info-notes-list');l.innerHTML='';infoNotes.forEach(note=>{const d=document.createElement('div');d.className='flex justify-between items-center p-3 bg-stone-50 rounded-lg text-sm border border-stone-100 group';d.innerHTML=`<span class="text-stone-700">${note.text}</span><button onclick="deleteInfoNote('${note.id}')" class="text-stone-300 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"><i data-lucide="x" class="w-4 h-4"></i></button>`;l.appendChild(d);});lucide.createIcons();}
-        async function addInfoNote(){const v=document.getElementById('new-note-input').value;if(!v)return;if(db) await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('notes').add({text:v,created:Date.now()}); else {infoNotes.push({id:Date.now().toString(),text:v}); renderInfoNotes();} document.getElementById('new-note-input').value='';}
-        async function deleteInfoNote(id){if(db) await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('notes').doc(id).delete(); else {infoNotes=infoNotes.filter(n=>n.id!==id); renderInfoNotes();}}
 
         // UI Helpers
         function initDateTabs() {const container = document.getElementById('date-tabs');const select = document.getElementById('new-day');for(let i=0; i<TOTAL_DAYS; i++) {const date = new Date(TRIP_START); date.setDate(TRIP_START.getDate() + i);const month = date.getMonth() + 1; const day = date.getDate(); const week = WEEKDAYS[date.getDay()];const btn = document.createElement('button');btn.className = `date-tab flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-bold border transition-all ${i===0?'bg-stone-800 text-white border-stone-800':'bg-white text-stone-400 border-stone-200'}`;btn.innerText = `Day ${i+1} (${week})`;btn.onclick = () => setDay(i);container.appendChild(btn);const opt = document.createElement('option'); opt.value = i; opt.text = `Day ${i+1} - ${month}/${day} (${week})`; select.appendChild(opt);}updateHeaderImage(0);}
