@@ -628,10 +628,24 @@
             // Itinerary
             publicRef.collection('itinerary').onSnapshot(snap => {
                 const fetched = snap.docs.map(d => ({id: d.id, ...d.data()}));
-                if(fetched.length === 0 && itineraryData.length === 0) { 
-                    // Use .set() to force the IDs to be consistent with DEFAULT_ITINERARY ids
-                    DEFAULT_ITINERARY.forEach(async f => await publicRef.collection('itinerary').doc(f.id).set({...f, created: Date.now()})); 
-                } else if(fetched.length > 0) { itineraryData = fetched; renderItineraryList(); }
+                
+                // FIX: Prevent re-seeding loop. Only seed if cloud collection is empty AND we haven't seeded before.
+                if (snap.docs.length === 0) { 
+                    if (!localStorage.getItem('osaka_itinerary_seeded')) { 
+                        DEFAULT_ITINERARY.forEach(async f => {
+                            // Use .set() with hardcoded ID
+                            await publicRef.collection('itinerary').doc(f.id).set({...f, created: Date.now()});
+                        });
+                        localStorage.setItem('osaka_itinerary_seeded', 'true');
+                    }
+                    itineraryData = []; // Clear local state if cloud is truly empty
+                } else { 
+                    itineraryData = fetched; 
+                    renderItineraryList();
+                    // If successfully fetched data, mark as seeded
+                    if (fetched.length > 0) localStorage.setItem('osaka_itinerary_seeded', 'true');
+                }
+
             }, () => updateStatus(false));
 
             // Settings (Header Image)
@@ -861,14 +875,15 @@
                 if(db) await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('itinerary').doc(id).delete(); 
                 else throw new Error(); 
                 
-                // Sync local storage on success just in case
-                localStorage.setItem('osaka_itinerary_2025_v5', JSON.stringify(itineraryData));
+                // If cloud delete is successful, we should also ensure the seeded flag is set, 
+                // but the onSnapshot listener will handle the final state sync.
+                // We keep the optimistic update clean here.
             } catch(e) {
                 console.error('Delete failed:', e);
                 // Rollback UI if delete failed
                 itineraryData = originalData;
                 renderItineraryList();
-                alert('刪除失敗，請檢查網路連線');
+                alert('刪除失敗，請檢查網路連線或稍後再試。'); // Changed alert message
             }
         }
 
