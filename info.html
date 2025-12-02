@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OSAKA FAMILY TRIP - 資訊</title>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-database.js"></script>
+    <style>
+        :root {
+            --main-color: #955f47;
+            --text-color: #382414;
+            --light-bg: #f8f8f8;
+            --white-bg: #ffffff;
+        }
+        /* (這裡的 CSS 樣式與 flight.html 中的導航區塊和 modal 樣式一致，避免重複，請確保複製 flight.html 的所有 CSS) */
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--light-bg);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            padding-top: 50px; /* 留給固定導航欄的空間 */
+        }
+        .fixed-nav-header {
+            width: 100%;
+            position: fixed;
+            top: 0;
+            z-index: 1000;
+            background-color: var(--main-color);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .main-title {
+            color: white;
+            padding: 10px 20px;
+            font-size: 20px;
+            font-weight: bold;
+            text-align: center;
+        }
+        /* 移除日期導航，只保留功能導航 */
+        .nav-bar-wrapper {
+            display: flex;
+            align-items: center;
+            background-color: var(--text-color);
+            padding: 5px 0;
+            justify-content: center;
+        }
+        .function-tabs {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+        }
+        .function-tab {
+            padding: 8px 15px;
+            color: white;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+        .function-tab:hover, .function-tab.active {
+            background-color: rgba(255, 255, 255, 0.15);
+            border-radius: 4px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            padding: 20px;
+            margin: 0 auto;
+        }
+        .info-section {
+            background-color: var(--white-bg);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            margin-bottom: 25px;
+        }
+        .info-section h2 {
+            color: var(--main-color);
+            font-size: 20px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        .contact-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px dashed #eee;
+        }
+        .contact-item:last-child {
+            border-bottom: none;
+        }
+        .contact-details {
+            flex-grow: 1;
+        }
+        .contact-name {
+            font-weight: bold;
+        }
+        .contact-number {
+            color: #007bff;
+        }
+        .delete-btn {
+            background: none;
+            border: none;
+            color: #f44336;
+            cursor: pointer;
+            font-size: 20px;
+            font-weight: bold;
+            padding: 0;
+            line-height: 1;
+        }
+        .taxi-message {
+            background-color: #fff3e0;
+            border-left: 5px solid #ff9800;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 15px;
+        }
+        .taxi-message h3 {
+            margin-top: 0;
+            color: #e65100;
+            font-size: 16px;
+        }
+        .phrase-box {
+            padding: 15px;
+            background-color: #e8f5e9;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+        .phrase-box h4 {
+            margin-top: 0;
+            color: #388e3c;
+            font-size: 14px;
+        }
+        .phrase-japanese {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--text-color);
+            margin-top: 5px;
+        }
+
+        /* Modal 樣式 (與 flight.html 相同) */
+        .modal { display: none; position: fixed; z-index: 200; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4); }
+        .modal-content { background-color: #fefefe; width: 100%; max-width: 600px; position: absolute; bottom: 0; box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2); border-top-left-radius: 12px; border-top-right-radius: 12px; padding: 20px; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .modal-close { color: #aaa; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .input-form-group input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .input-form-group button {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--main-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="fixed-nav-header">
+        <div class="main-title">OSAKA FAMILY TRIP</div>
+        
+        <div class="nav-bar-wrapper">
+            <div class="function-tabs">
+                <a href="flight.html" class="function-tab">行程</a>
+                <a href="checklist.html" class="function-tab">清單</a>
+                <a href="exchange.html?mode=rate" class="function-tab">換匯</a>
+                <a href="exchange.html?mode=budget" class="function-tab">記帳</a>
+                <a href="info.html" class="function-tab active">資訊</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        
+        <div class="info-section">
+            <h2>住宿資訊</h2>
+            <div class="address-details">
+                <p><strong>飯店名稱:</strong> Ostay Vermillion Kitahama飯店公寓</p>
+                <p><strong>地址:</strong> 〒541-0041 大阪府大阪市中央區北濱2-4-11</p>
+            </div>
+            
+            <div class="taxi-message">
+                <h3>給計程車司機看的日文地址：</h3>
+                <p style="font-size: 22px; font-weight: bold; color: black;">
+                    私たちはここに⾏きたいです。<br>
+                    中央区北浜二丁目４番１１号 までお願いします。
+                </p>
+            </div>
+        </div>
+
+        <div class="info-section">
+            <h2>緊急聯絡人</h2>
+            <div id="contactList">載入中...</div>
+            <button id="addContactBtn" style="padding: 10px; background-color: var(--text-color); color: white; border: none; border-radius: 6px; font-size: 14px; margin-top: 15px; width: 100%;">＋ 新增緊急聯絡人</button>
+        </div>
+
+        <div class="info-section">
+            <h2>常用日文短語 (親子飲食)</h2>
+            
+            <div class="phrase-box">
+                <h4>請問是否有不含酒精的料理？ (小朋友要吃)</h4>
+                <div class="phrase-japanese">子供が食べられるアルコール不使用の料理はありますか？</div>
+            </div>
+
+            <div class="phrase-box">
+                <h4>請問這個料理裡面有含酒精嗎？</h4>
+                <div class="phrase-japanese">これにアルコールは入っていますか？</div>
+            </div>
+        </div>
+
+    </div>
+    
+    <div id="addContactModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>新增聯絡人</h2>
+                <span class="modal-close" id="closeContactModal">&times;</span>
+            </div>
+            
+            <form id="contactForm">
+                <div class="input-form-group">
+                    <label for="contactName">姓名/關係 (例如：台灣保險、媽媽)</label>
+                    <input type="text" id="contactName" placeholder="必填" required>
+                </div>
+                <div class="input-form-group">
+                    <label for="contactNumber">電話</label>
+                    <input type="tel" id="contactNumber" placeholder="必填" required>
+                </div>
+                <button type="submit">儲存至雲端</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // ----------------------------------------------------
+        // 【雲端配置區】請貼上您最新的配置碼 (與 flight.html 相同)
+        // ----------------------------------------------------
+        const firebaseConfig = {
+            apiKey: "AIzaSyBGmvolsS8AgPfm09qynSVIz5GOcvXDKCM",
+            authDomain: "osaka-family-trip.firebaseapp.com",
+            databaseURL: "https://osaka-family-trip-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "osaka-family-trip",
+            storageBucket: "osaka-family-trip.firebasestorage.app",
+            messagingSenderId: "303743481222",
+            appId: "1:303743481222:web:e3e4ecb51ff89a3acfe807"
+        };
+        
+        try {
+            firebase.initializeApp(firebaseConfig);
+            const database = firebase.database();
+            const contactRef = database.ref('emergency_contacts'); // 緊急聯絡人路徑
+        } catch (error) {
+            console.error("Firebase Initialization Error:", error);
+            alert("App 啟動失敗！請檢查 Firebase 配置碼是否正確。");
+        }
+        // ----------------------------------------------------
+        
+        const contactList = document.getElementById('contactList');
+        
+        function renderContacts() {
+            contactRef.on('value', (snapshot) => {
+                const contacts = snapshot.val();
+                contactList.innerHTML = '';
+
+                if (!contacts) {
+                    contactList.innerHTML = '<div style="text-align: center; color: #999; padding: 10px;">目前沒有儲存的緊急聯絡人</div>';
+                    return;
+                }
+                
+                // 將物件轉換為陣列，並確保項目有 key
+                const itemsArray = Object.keys(contacts).map(key => ({ ...contacts[key], key })).reverse();
+
+                itemsArray.forEach(item => {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = 'contact-item';
+
+                    itemDiv.innerHTML = `
+                        <div class="contact-details">
+                            <div class="contact-name">${item.name}</div>
+                            <a class="contact-number" href="tel:${item.number}">${item.number}</a>
+                        </div>
+                        <button class="delete-btn" data-key="${item.key}">&times;</button>
+                    `;
+                    contactList.appendChild(itemDiv);
+                });
+                
+                // 刪除按鈕邏輯
+                document.querySelectorAll('.delete-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const itemKey = this.dataset.key;
+                        if (confirm(`確定要刪除聯絡人：${contacts[itemKey].name} 嗎？`)) {
+                            contactRef.child(itemKey).remove()
+                                .then(() => {
+                                    alert('聯絡人已成功刪除！');
+                                })
+                                .catch(error => {
+                                    console.error("Remove failed:", error);
+                                });
+                        }
+                    });
+                });
+            });
+        }
+        
+        // ----------------------------------------------------
+        // Modal 邏輯
+        // ----------------------------------------------------
+        const addContactModal = document.getElementById('addContactModal');
+        const closeContactModal = document.getElementById('closeContactModal');
+        const addContactBtn = document.getElementById('addContactBtn');
+        const contactForm = document.getElementById('contactForm');
+        
+        addContactBtn.onclick = function() {
+            addContactModal.style.display = "flex";
+        }
+        closeContactModal.onclick = function() {
+            addContactModal.style.display = "none";
+            contactForm.reset();
+        }
+        window.onclick = function(event) {
+            if (event.target == addContactModal) {
+                addContactModal.style.display = "none";
+                contactForm.reset();
+            }
+        }
+        
+        contactForm.onsubmit = function(event) {
+            event.preventDefault();
+            
+            const name = document.getElementById('contactName').value.trim();
+            const number = document.getElementById('contactNumber').value.trim();
+
+            if (!name || !number) {
+                alert('姓名和電話不能為空！');
+                return;
+            }
+
+            const newContact = {
+                name: name,
+                number: number,
+                timestamp: firebase.database.ServerValue.TIMESTAMP
+            };
+            
+            contactRef.push(newContact)
+                .then(() => {
+                    alert('新聯絡人已成功儲存！');
+                    addContactModal.style.display = "none";
+                    contactForm.reset();
+                })
+                .catch(error => {
+                    console.error("Write failed:", error);
+                    alert('儲存失敗，請檢查網路連線。');
+                });
+        }
+
+        renderContacts();
+    </script>
+</body>
+</html>
